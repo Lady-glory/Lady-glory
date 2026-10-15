@@ -823,8 +823,16 @@ async def handle_toggle_pause_all(request: web.Request) -> web.Response:
         return web.json_response({"status": "error", "error": str(e)})
 
 
-async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
+
+async def start_web_dashboard(
+    host: str = "0.0.0.0",
+    port: int | None = None
+):
+    if port is None:
+        port = int(os.environ.get("PORT", "10000"))
+
     app = web.Application()
+
     app.router.add_get("/", handle_index)
     app.router.add_static("/assets/", ASSETS_PATH, show_index=False)
     app.router.add_get("/api/stats", handle_get_stats)
@@ -842,6 +850,10 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
 
     runner = web.AppRunner(app)
     await runner.setup()
+
     site = web.TCPSite(runner, host, port)
     await site.start()
+
+    print(f"Dashboard HTTP ativo em {host}:{port}")
+
     return runner
