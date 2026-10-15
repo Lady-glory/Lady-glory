@@ -824,36 +824,49 @@ async def handle_toggle_pause_all(request: web.Request) -> web.Response:
 
 
 
-async def start_web_dashboard(
-    host: str = "0.0.0.0",
-    port: int | None = None
-):
-    if port is None:
-        port = int(os.environ.get("PORT", "10000"))
+async def start_web_dashboard(host="0.0.0.0", port=None):
+    import os
+    import traceback
+    from aiohttp import web
 
-    app = web.Application()
+    port = int(port or os.environ.get("PORT", "10000"))
 
-    app.router.add_get("/", handle_index)
-    app.router.add_static("/assets/", ASSETS_PATH, show_index=False)
-    app.router.add_get("/api/stats", handle_get_stats)
-    app.router.add_get("/api/guild", handle_guild_lookup)
-    app.router.add_post("/api/guild/join", handle_guild_join)
-    app.router.add_get("/api/watch", handle_watch_ids)
-    app.router.add_post("/api/watch", handle_watch_ids_update)
-    app.router.add_post("/api/account/add", handle_add_account)
-    app.router.add_post("/api/account/delete", handle_delete_account)
-    app.router.add_post("/api/account/refresh", handle_refresh_account)
-    app.router.add_post("/api/account/restart", handle_restart_account)
-    app.router.add_post("/api/account/pause", handle_toggle_pause)
-    app.router.add_post("/api/account/pause_all", handle_toggle_pause_all)
-    app.router.add_post("/api/logs/clear", handle_clear_logs)
+    print(f"[DASHBOARD] Iniciando servidor...", flush=True)
+    print(f"[DASHBOARD] Host: {host}", flush=True)
+    print(f"[DASHBOARD] Porta: {port}", flush=True)
 
-    runner = web.AppRunner(app)
-    await runner.setup()
+    try:
+        app = web.Application()
 
-    site = web.TCPSite(runner, host, port)
-    await site.start()
+        app.router.add_get("/", handle_index)
+        app.router.add_static("/assets/", ASSETS_PATH, show_index=False)
+        app.router.add_get("/api/stats", handle_get_stats)
+        app.router.add_get("/api/guild", handle_guild_lookup)
+        app.router.add_post("/api/guild/join", handle_guild_join)
+        app.router.add_get("/api/watch", handle_watch_ids)
+        app.router.add_post("/api/watch", handle_watch_ids_update)
+        app.router.add_post("/api/account/add", handle_add_account)
+        app.router.add_post("/api/account/delete", handle_delete_account)
+        app.router.add_post("/api/account/refresh", handle_refresh_account)
+        app.router.add_post("/api/account/restart", handle_restart_account)
+        app.router.add_post("/api/account/pause", handle_toggle_pause)
+        app.router.add_post("/api/account/pause_all", handle_toggle_pause_all)
+        app.router.add_post("/api/logs/clear", handle_clear_logs)
 
-    print(f"Dashboard HTTP ativo em {host}:{port}")
+        runner = web.AppRunner(app)
+        await runner.setup()
 
-    return runner
+        site = web.TCPSite(runner, host, port)
+        await site.start()
+
+        print(
+            f"[DASHBOARD] Servidor ativo em http://{host}:{port}",
+            flush=True
+        )
+
+        return runner
+
+    except Exception:
+        print("[DASHBOARD] ERRO AO INICIAR:", flush=True)
+        traceback.print_exc()
+        raise
