@@ -346,6 +346,18 @@ _team_state = {
     "lock": asyncio.Lock(),
 }
 
+
+def _sync_team_dashboard():
+    try:
+        bot_state.update_team_state(
+            members=list(_team_state.get("members", set())),
+            leader_uid=_team_state.get("leader_uid"),
+            team_code=_team_state.get("team_code"),
+            room_code=_team_state.get("pk_code"),
+        )
+    except Exception:
+        pass
+
 async def _team_member_join(uid):
     uid = str(uid)
     async with _team_state["members_lock"]:
@@ -353,6 +365,7 @@ async def _team_member_join(uid):
         _team_state["members"].add(uid)
         after = len(_team_state["members"])
     if after != before:
+        _sync_team_dashboard()
         print_success(f"[TEAM] 👥 In team ({after}/{TEAM_SIZE}) | joined: {uid}")
         try:
             for p_uid in list(_team_state["peers"].keys()):
@@ -366,6 +379,7 @@ async def _team_member_join(uid):
 async def _team_member_leave(uid):
     async with _team_state["members_lock"]:
         _team_state["members"].discard(str(uid))
+    _sync_team_dashboard()
 
 async def _team_member_count():
     async with _team_state["members_lock"]:
@@ -376,6 +390,7 @@ async def _team_member_reset(keep_leader=True):
         _team_state["members"].clear()
         if keep_leader and _team_state["leader_uid"]:
             _team_state["members"].add(_team_state["leader_uid"])
+    _sync_team_dashboard()
 
 # ═══════════════════════════ TOKEN CACHE ═══════════════════════════
 _token_cache_memo = {}
@@ -1610,6 +1625,7 @@ async def _handle_team_invite(hex_data, pl, uid_str, current_account_data,
         if tc:
             async with _team_state["lock"]:
                 _team_state["team_code"] = tc
+            _sync_team_dashboard()
             print_success(f"[TEAM-IN {uid_str}] 📢 Team Code: {tc}")
 
         is_member = (_team_state["leader_uid"] != uid_str)

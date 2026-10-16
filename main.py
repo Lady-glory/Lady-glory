@@ -26,9 +26,8 @@ import thunderFF_pb2
 from dashboard_server import bot_state, start_web_dashboard
 
 # ═══════════════════════════ CONFIG ═══════════════════════════
-
 WEB_HOST = "0.0.0.0"
-WEB_PORT = int(os.environ.get("PORT", 10000))
+WEB_PORT = 20333
 ACCOUNTS_FILE = "accounts.json"
 TOKEN_CACHE_FILE = "token_cache.json"
 DEVICES_FILE = "devices.json"
@@ -297,6 +296,18 @@ _team_state = {
     "lock": asyncio.Lock(),
 }
 
+
+def _sync_team_dashboard():
+    try:
+        bot_state.update_team_state(
+            members=list(_team_state.get("members", set())),
+            leader_uid=_team_state.get("leader_uid"),
+            team_code=_team_state.get("team_code"),
+            room_code=_team_state.get("pk_code"),
+        )
+    except Exception:
+        pass
+
 async def _team_member_join(uid):
     uid = str(uid)
     async with _team_state["members_lock"]:
@@ -304,6 +315,15 @@ async def _team_member_join(uid):
         _team_state["members"].add(uid)
         after = len(_team_state["members"])
     if after != before:
+        try:
+            bot_state.update_team_state(
+                members=list(_team_state["members"]),
+                leader_uid=_team_state.get("leader_uid"),
+                team_code=_team_state.get("team_code"),
+                room_code=_team_state.get("pk_code"),
+            )
+        except Exception:
+            pass
         print_success(f"[TEAM] 👥 In team ({after}/{TEAM_SIZE}) | joined: {uid}")
         try:
             for p_uid in list(_team_state["peers"].keys()):
@@ -317,6 +337,15 @@ async def _team_member_join(uid):
 async def _team_member_leave(uid):
     async with _team_state["members_lock"]:
         _team_state["members"].discard(str(uid))
+    try:
+        bot_state.update_team_state(
+            members=list(_team_state["members"]),
+            leader_uid=_team_state.get("leader_uid"),
+            team_code=_team_state.get("team_code"),
+            room_code=_team_state.get("pk_code"),
+        )
+    except Exception:
+        pass
 
 async def _team_member_count():
     async with _team_state["members_lock"]:
@@ -327,6 +356,15 @@ async def _team_member_reset(keep_leader=True):
         _team_state["members"].clear()
         if keep_leader and _team_state["leader_uid"]:
             _team_state["members"].add(_team_state["leader_uid"])
+    try:
+        bot_state.update_team_state(
+            members=list(_team_state["members"]),
+            leader_uid=_team_state.get("leader_uid"),
+            team_code=_team_state.get("team_code"),
+            room_code=_team_state.get("pk_code"),
+        )
+    except Exception:
+        pass
 
 # ═══════════════════════════ TOKEN CACHE ═══════════════════════════
 _token_cache_memo = {}
@@ -1587,6 +1625,7 @@ async def _handle_team_invite(hex_data, pl, uid_str, current_account_data,
         if tc:
             async with _team_state["lock"]:
                 _team_state["team_code"] = tc
+            _sync_team_dashboard()
             print_success(f"[TEAM-IN {uid_str}] 📢 Team Code: {tc}")
 
         is_member = (_team_state["leader_uid"] != uid_str)
@@ -1978,6 +2017,7 @@ async def functional_battle_royale(addrs, starter_packet, account_region, client
                                     async with _team_state["lock"]:
                                         _team_state["pk_code"] = str(match_code)
                                         _team_state["team_code"] = str(match_code)
+                                    _sync_team_dashboard()
                                     print_colored(f"[PK] 🎯 Room Code: {match_code}", Colors.MAGENTA)
                                     print_colored(f"[PK] 🌐 Server: {server_ip_port}", Colors.MAGENTA)
                                     print_colored(f"[PK] 🔑 UDP Key: {udp_key}", Colors.MAGENTA)
