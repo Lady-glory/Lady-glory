@@ -10,10 +10,154 @@ import json
 import os
 import time
 from typing import Dict, List, Any, Optional
-from aiohttp import web, ClientSession, ClientTimeout
+from aiohttp import web
+import urllib3
+import requests
+import httpx
+import jwt
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import ReqCLan_pb2
+import encode_id_clan_pb2
+import data_pb2
+import output_pb2
+from google.protobuf.json_format import MessageToDict
 
-TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "index.html")
-ASSETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "MAHIN_CODEX", "index.html")
+
+OB = "OB55"
+KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
+IV  = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
+
+GAME_HEADERS = {
+    "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
+    "Connection": "Keep-Alive",
+    "Accept-Encoding": "gzip",
+    "Content-Type": "application/octet-stream",
+    "X-Unity-Version": "2018.4.11f1",
+    "X-GA": "v1 1",
+    "ReleaseVersion": OB,
+    "Expect": "100-continue"
+}
+
+REGION_SERVER_MAP = {
+    "IND": ("https://client.ind.freefiremobile.com", "client.ind.freefiremobile.com"),
+    "ME":  ("https://clientbp.ggblueshark.com", "clientbp.ggblueshark.com"),
+    "VN":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
+    "BD":  ("https://clientbp.ggwhitehawk.com", "clientbp.ggwhitehawk.com"),
+    "PK":  ("https://clientbp.ggblueshark.com", "clientbp.ggblueshark.com"),
+    "SG":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
+    "BR":  ("https://client.us.freefiremobile.com", "client.us.freefiremobile.com"),
+    "NA":  ("https://client.us.freefiremobile.com", "client.us.freefiremobile.com"),
+    "ID":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
+    "RU":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
+    "TH":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
+    "SAC": ("https://client.br.freefiremobile.com", "client.br.freefiremobile.com"),
+    "TW":  ("https://client.tw.freefiremobile.com", "client.tw.freefiremobile.com"),
+    "CIS": ("https://client.cis.freefiremobile.com", "client.cis.freefiremobile.com"),
+}
+DEFAULT_SERVER_URL = "https://clientbp.ggblueshark.com"
+DEFAULT_HOST = "clientbp.ggblueshark.com"
+
+def encrypt_payload(data):
+    cipher = AES.new(KEY, AES.MODE_CBC, IV)
+    return cipher.encrypt(pad(data, AES.block_size))
+
+def get_server_info(region):
+    val = REGION_SERVER_MAP.get(str(region).upper(), DEFAULT_SERVER_URL)
+    if isinstance(val, tuple):
+        return val
+    return (val, DEFAULT_HOST)
+
+def get_server_url(region):
+    info = get_server_info(region)
+    return info[0] if isinstance(info, tuple) else info
+
+def fetch_single_clan(clan_id, region, token_cache):
+    server_base, host = get_server_info(region)
+    url = f"{server_base}/GetClanInfoByClanID"
+
+    try:  
+        my_data = encode_id_clan_pb2.MyData()  
+        my_data.field1 = int(clan_id)  
+        my_data.field2 = 1  
+        payload = encrypt_payload(my_data.SerializeToString())  
+    except Exception as e:
+        return {"clan_id": clan_id, "error": f"Protobuf failed: {str(e)}"}
+
+    response = None
+    for uid, creds in token_cache.items():
+        token = creds.get('token')
+        if not token:
+            continue
+
+        headers = GAME_HEADERS.copy()
+        headers["Authorization"] = f"Bearer {token}" if not token.startswith("Bearer ") else token
+        headers["Host"] = host
+
+        try:
+            res = requests.post(url, headers=headers, data=payload, verify=False, timeout=15.0)
+            if res.status_code == 200:
+                response = res
+                break
+            elif "expired" in res.text.lower() or res.status_code == 401:
+                continue
+            else:
+                response = res
+                break
+        except Exception as ex:
+            continue
+
+    if not response or response.status_code != 200:
+        return {"clan_id": clan_id, "error": "All tokens failed or expired"}
+
+    full_response = {}
+    resp = None
+    try:
+        resp = data_pb2.response()  
+        resp.ParseFromString(response.content)  
+        full_response = MessageToDict(resp, preserving_proto_field_name=True)
+    except Exception as e:
+        pass
+
+    guild_xp = 0
+    if resp:
+        for field_desc, val in resp.ListFields():
+            if field_desc.number == 36 and isinstance(val, int):
+                guild_xp = val
+                break
+
+    if guild_xp == 0 and full_response:
+        guild_xp = int(full_response.get("field_36") or full_response.get("xp") or 0)
+
+    return {
+        "captain_id": getattr(resp, "captain_id", 0) if resp else full_response.get("captain_id", 0),
+        "clan_id": int(clan_id),
+        "clan_level": getattr(resp, "rank", 4) if resp else full_response.get("rank", 4),
+        "clan_name": getattr(resp, "special_code", None) if resp else (full_response.get("special_code") or f"Guild_{clan_id}"),
+        "current_officer": full_response.get("current_officer", 0),
+        "current_members": full_response.get("current_members", 1),                
+        "max_members": full_response.get("max_members", 50),
+        "Total guild xp": int(guild_xp),
+        "welcome_message": getattr(resp, "welcome_message", "") if resp else full_response.get("welcome_message", ""),
+        "region": region,
+        "xp": int(guild_xp),
+        "raw_response_bytes": response.content.hex()
+    }
+
+async def request_clan_async(jwt_token, clan_id, region):
+    server_url = get_server_url(region)
+    msg = ReqCLan_pb2.MyMessage()
+    msg.field_1 = int(clan_id)
+    payload = encrypt_payload(msg.SerializeToString())
+    headers = GAME_HEADERS.copy()
+    headers["Authorization"] = f"Bearer {jwt_token}" if not jwt_token.startswith("Bearer ") else jwt_token
+    url = f"{server_url}/RequestJoinClan"
+    async with httpx.AsyncClient(verify=False, timeout=8.0) as client:
+        r = await client.post(url, headers=headers, content=payload)
+        return r.status_code, r.text
 
 EXP_TABLE: Dict[int, int] = {
     1: 0, 2: 48, 3: 202, 4: 544, 5: 1012, 6: 1844, 7: 2792, 8: 3800,
@@ -33,6 +177,42 @@ EXP_TABLE: Dict[int, int] = {
     94: 21488570, 95: 23095858, 96: 24763138, 97: 26490428, 98: 28378704, 99: 30124996,
     100: 32032884
 }
+
+async def handle_index(request: web.Request) -> web.Response:
+    content = FALLBACK_INDEX_HTML
+    if os.path.exists(TEMPLATE_PATH):
+        try:
+            with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception:
+            pass
+    return web.Response(text=content, content_type="text/html", charset="utf-8")
+
+
+async def handle_get_stats(request: web.Request) -> web.Response:
+    accounts_data = list(bot_state.accounts.values())
+    accounts_data.sort(key=lambda x: x.get("gained_exp", 0), reverse=True)
+    uptime_sec = max(1, int(time.time() - bot_state.start_time))
+    total_gained = bot_state.total_gained_exp
+    exp_per_hour = int((total_gained / uptime_sec) * 3600)
+    total_active_matches = sum(acc.get("active_matches", 0) for acc in accounts_data)
+
+    for acc in accounts_data:
+        uid_k = str(acc.get("uid", ""))
+        acc["uptime_seconds"] = bot_state.get_account_uptime(uid_k)
+        acc["is_paused"] = bot_state.is_paused(uid_k)
+
+    return web.json_response({
+        "total_accounts": len(bot_state.accounts),
+        "total_matches": bot_state.total_matches,
+        "total_matches_started": bot_state.total_matches_started,   # 🔥 NEW
+        "total_active_matches": total_active_matches,
+        "total_gained_exp": total_gained,
+        "exp_per_hour": exp_per_hour,
+        "accounts": accounts_data,
+        "logs": bot_state.logs[-80:],
+        "uptime": uptime_sec
+    })
 
 def calculate_level_progress(level: int, current_exp: int) -> Dict[str, Any]:
     level = max(1, level)
@@ -55,7 +235,6 @@ def calculate_level_progress(level: int, current_exp: int) -> Dict[str, Any]:
         "progress_pct": round(progress_pct, 1)
     }
 
-# Global bot state shared between Main.py and Web Dashboard
 class BotState:
     def __init__(self):
         self.accounts: Dict[str, Dict[str, Any]] = {}
@@ -73,21 +252,6 @@ class BotState:
         self.refresh_callbacks: Dict[str, Any] = {}
         self.account_credentials: Dict[str, Dict[str, Any]] = {}
         self.active_writers: Dict[str, set] = {}
-        self.team_state: Dict[str, Any] = {
-            "members": [], "leader_uid": None, "team_code": None,
-            "room_code": None, "capacity": 4, "updated_at": None
-        }
-
-    def update_team_state(self, members=None, leader_uid=None, team_code=None, room_code=None):
-        if members is not None:
-            self.team_state["members"] = [str(value) for value in members]
-        if leader_uid is not None:
-            self.team_state["leader_uid"] = str(leader_uid)
-        if team_code is not None:
-            self.team_state["team_code"] = str(team_code)
-        if room_code is not None:
-            self.team_state["room_code"] = str(room_code)
-        self.team_state["updated_at"] = time.strftime("%H:%M:%S")
 
     def register_writer(self, uid: str, writer):
         uid_str = str(uid)
@@ -391,19 +555,14 @@ class BotState:
 
 bot_state = BotState()
 
-
-# Fallback HTML if templates/index.html is missing
 FALLBACK_INDEX_HTML = """<!DOCTYPE html>
 <html>
-<head><title>TAZHINI Bot Dashboard</title></head>
+<head><title>TEAM RBC Bot Dashboard</title></head>
 <body style="background:#0a0a12;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
-<h1>TAZHINI BOT RUNNING</h1>
-<p>templates/index.html is loading...</p>
+<h1>TEAM RBC BOT RUNNING</h1>
+<p>Dashboard interface loaded successfully.</p>
 </body>
 </html>"""
-
-
-# ==================== HTTP HANDLERS ====================
 
 async def handle_index(request: web.Request) -> web.Response:
     content = FALLBACK_INDEX_HTML
@@ -415,168 +574,133 @@ async def handle_index(request: web.Request) -> web.Response:
             pass
     return web.Response(text=content, content_type="text/html", charset="utf-8")
 
-
-async def handle_get_stats(request: web.Request) -> web.Response:
-    accounts_data = list(bot_state.accounts.values())
-    accounts_data.sort(key=lambda x: x.get("gained_exp", 0), reverse=True)
-    uptime_sec = max(1, int(time.time() - bot_state.start_time))
-    total_gained = bot_state.total_gained_exp
-    exp_per_hour = int((total_gained / uptime_sec) * 3600)
-    total_active_matches = sum(acc.get("active_matches", 0) for acc in accounts_data)
-
-    for acc in accounts_data:
-        uid_k = str(acc.get("uid", ""))
-        acc["uptime_seconds"] = bot_state.get_account_uptime(uid_k)
-        acc["is_paused"] = bot_state.is_paused(uid_k)
-
-    squads = []
-    ordered = sorted(accounts_data, key=lambda x: str(x.get("uid", "")))
-    for offset in range(0, len(ordered), 4):
-        group = ordered[offset:offset + 4]
-        squads.append({
-            "id": f"squad-{(offset // 4) + 1}",
-            "index": (offset // 4) + 1,
-            "capacity": 4,
-            "member_count": len(group),
-            "ready": len(group) == 4,
-            "members": [{
-                "uid": str(account.get("uid", "")),
-                "nickname": account.get("nickname", "—"),
-                "status": account.get("status", "OFFLINE"),
-                "active_matches": account.get("active_matches", 0),
-            } for account in group],
-        })
-
-    return web.json_response({
-        "total_accounts": len(bot_state.accounts),
-        "total_matches": bot_state.total_matches,
-        "total_matches_started": bot_state.total_matches_started,   # 🔥 NEW
-        "total_active_matches": total_active_matches,
-        "total_gained_exp": total_gained,
-        "exp_per_hour": exp_per_hour,
-        "accounts": accounts_data,
-        "logs": bot_state.logs[-80:],
-        "team": {
-            **bot_state.team_state,
-            "member_count": len(bot_state.team_state.get("members", [])),
-        },
-        "squads": squads,
-        "uptime": uptime_sec
-    })
-
-
-FREEFIRE_API = "https://hostfreefire-api.squareweb.app/api"
-WATCH_IDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watch_ids.json")
-
-
-def _read_watch_ids() -> List[str]:
+# ==================== CLAN JOIN API ENDPOINT (AIOHTTP) ====================
+async def handle_api_clan_join(request: web.Request) -> web.Response:
     try:
-        with open(WATCH_IDS_FILE, "r", encoding="utf-8") as file:
-            values = json.load(file)
-        return [str(value).strip() for value in values if str(value).strip().isdigit()]
+        data = await request.json()
+        clan_id = data.get('clan_id')
+        if not clan_id:
+            return web.json_response({'error': 'Clan ID is required'}, status=400)
+        
+        try:
+            with open("token_cache.json", "r", encoding="utf-8") as f:
+                token_cache = json.load(f)
+        except Exception as e:
+            return web.json_response({'error': f'Failed to load token_cache.json: {str(e)}'}, status=500)
+
+        success_count = 0
+        total_accounts = 0
+        for uid, creds in token_cache.items():
+            jwt_token = creds.get('token')
+            region = creds.get('region', 'IND')
+            if not jwt_token:
+                continue
+            
+            total_accounts += 1
+            try:
+                status_code, text_resp = await request_clan_async(jwt_token, clan_id, region)
+                if status_code == 200:
+                    success_count += 1
+            except Exception:
+                pass
+
+        return web.json_response({
+            'message': f'Clan join requests sent successfully for {success_count} / {total_accounts} accounts!'
+        }, status=200)
+    except Exception as e:
+        return web.json_response({'error': str(e)}, status=500)
+
+# ==================== GUILD INFO API ENDPOINT (AIOHTTP) ====================
+GUILD_CACHE_FILE = "guild_exp_cache.json"
+
+def load_guild_cache():
+    if os.path.exists(GUILD_CACHE_FILE):
+        try:
+            with open(GUILD_CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_guild_cache(cache_data):
+    try:
+        with open(GUILD_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, indent=4)
     except Exception:
-        return []
+        pass
 
+def get_persisted_baseline_xp(clan_id, current_xp):
+    cache = load_guild_cache()
+    clan_key = str(clan_id)
+    
+    if clan_key not in cache or "old_xp" not in cache[clan_key]:
+        cache[clan_key] = {
+            "old_xp": current_xp,
+            "live_xp": current_xp,
+            "gained_exp": 0
+        }
+        save_guild_cache(cache)
+        return current_xp
+    
+    return int(cache[clan_key]["old_xp"])
 
-def _write_watch_ids(values: List[str]) -> None:
-    clean = sorted(set(str(value).strip() for value in values if str(value).strip().isdigit()))
-    with open(WATCH_IDS_FILE, "w", encoding="utf-8") as file:
-        json.dump(clean, file, indent=2)
-
-
-async def _proxy_get(path: str, params: Dict[str, str]) -> Dict[str, Any]:
-    """Consulta a API pública sem enviar credenciais para o código do navegador."""
-    timeout = ClientTimeout(total=20)
-    async with ClientSession(timeout=timeout) as session:
-        async with session.get(f"{FREEFIRE_API}{path}", params=params) as response:
-            data = await response.json(content_type=None)
-            if response.status >= 400:
-                raise RuntimeError(data.get("error", "API externa indisponível"))
-            return data
-
-
-async def handle_guild_lookup(request: web.Request) -> web.Response:
-    guild_id = str(request.query.get("guild_id", "")).strip()
-    region = str(request.query.get("region", "br")).strip().lower()
-    if not guild_id.isdigit():
-        return web.json_response({"success": False, "error": "guild_id inválido"}, status=400)
+async def handle_api_guild_info(request: web.Request) -> web.Response:
     try:
-        return web.json_response(await _proxy_get("/search_guild_id", {"id": guild_id, "region": region}))
-    except Exception as exc:
-        return web.json_response({"success": False, "error": str(exc)}, status=502)
+        clan_id = request.query.get('guild_id') or request.query.get('clan_uid') or request.query.get('clan_id')
+        region = (request.query.get('region') or 'IND').upper()
+        api_key = request.query.get('key')
 
+        if not api_key or api_key != "XEROX_MODS":
+            return web.json_response({"error": "Unauthorized: Invalid or missing API key"}, status=401)
 
-async def handle_guild_join(request: web.Request) -> web.Response:
-    try:
-        data = await request.json()
-        clan_id = str(data.get("clan_id", "")).strip()
-        uid = str(data.get("uid", "")).strip()
-        password = str(data.get("password", "")).strip()
-        access_token = str(data.get("access_token", "")).strip()
-        if not clan_id.isdigit() or not ((uid and password) or access_token):
-            return web.json_response({"success": False, "error": "Informe clan_id e UID + senha ou access_token."}, status=400)
-        params = {"clan_id": clan_id}
-        if access_token:
-            params["access_token"] = access_token
-        else:
-            params.update({"uid": uid, "password": password})
-        result = await _proxy_get("/join_guild", params)
-        return web.json_response(result)
-    except Exception as exc:
-        return web.json_response({"success": False, "error": str(exc)}, status=502)
+        if not clan_id:
+            return web.json_response({"error": "guild_id is required"}, status=400)
 
-
-async def handle_watch_ids(request: web.Request) -> web.Response:
-    """Consulta IDs sem senha; ações autenticadas continuam usando as contas cadastradas."""
-    ids = _read_watch_ids()
-    region = str(request.query.get("region", "br")).strip().lower()
-    registered = {str(account.get("uid", "")) for account in bot_state.accounts.values()}
-    items = []
-    for uid in ids:
-        item: Dict[str, Any] = {"uid": uid, "region": region, "registered": uid in registered,
-                                "online": uid in bot_state.accounts and not bot_state.is_paused(uid)}
         try:
-            profile = await _proxy_get("/info_player", {"uid": uid, "region": region,
-                                                         "clothes": "true", "full": "1"})
-            basic = profile.get("basicInfo", {})
-            profile_info = profile.get("profileInfo", {})
-            clothes = profile_info.get("clothes", {})
-            images = profile.get("images", {})
-            outfit = images.get("outfit", {}) if isinstance(images, dict) else {}
-            item["nickname"] = basic.get("nickname") or "Sem nickname"
-            item["level"] = basic.get("level")
-            item["exp"] = basic.get("exp", 0)
-            item["last_login_at"] = basic.get("lastLoginAt")
-            item["avatar_id"] = profile_info.get("avatarId")
-            item["clothes_ids"] = clothes.get("ids", [])
-            item["outfit_url"] = outfit.get("webp") or outfit.get("jpeg")
-            item["profile"] = basic
-        except Exception:
-            item["nickname"] = "Não localizado"
-        try:
-            ban = await _proxy_get("/check_banned", {"id": uid, "region": region})
-            details = ban.get("details", ban)
-            banned_value = str(details.get("is_banned", "")).strip().lower()
-            item["banned"] = banned_value in {"yes", "true", "1", "sim", "banned"}
-            item["banned_period"] = details.get("banned_period", 0)
-            item["ban_info"] = ban
-        except Exception:
-            item["banned"] = None
-        items.append(item)
-    return web.json_response({"success": True, "ids": items})
+            with open("token_cache.json", "r", encoding="utf-8") as f:
+                token_cache = json.load(f)
+        except Exception as e:
+            return web.json_response({"error": "Failed to load token_cache.json", "details": str(e)}, status=503)
 
+        if not token_cache:
+            return web.json_response({"error": "token_cache.json is empty"}, status=503)
 
-async def handle_watch_ids_update(request: web.Request) -> web.Response:
-    try:
-        data = await request.json()
-        raw = data.get("ids", [])
-        if isinstance(raw, str):
-            raw = raw.replace(",", "\n").splitlines()
-        ids = [str(value).strip() for value in raw if str(value).strip().isdigit()]
-        _write_watch_ids(ids)
-        return web.json_response({"success": True, "ids": _read_watch_ids()})
-    except Exception as exc:
-        return web.json_response({"success": False, "error": str(exc)}, status=400)
+        clan_data = fetch_single_clan(clan_id, region, token_cache)
+        if "error" in clan_data:
+            return web.json_response(clan_data, status=500)
+
+        current_xp = int(clan_data.get("Total guild xp") or clan_data.get("xp") or 0)
+        baseline_xp = get_persisted_baseline_xp(clan_id, current_xp)
+        gained_exp = current_xp - baseline_xp
+
+        # Cache update
+        cache = load_guild_cache()
+        cache[str(clan_id)] = {
+            "old_xp": baseline_xp,
+            "live_xp": current_xp,
+            "gained_exp": gained_exp
+        }
+        save_guild_cache(cache)
+
+        clan_data["old_xp"] = baseline_xp
+        clan_data["gained_exp"] = gained_exp
+
+        api_response_body = {
+            "DEVLOVER": "XEROX_MODS",
+            "TELEGRAM": "SEXTYMODS",
+            "TIME AND DATE": time.strftime("%I:%M %p, %A, %B %d, %Y"),
+            "clan_basic_info": clan_data
+        }
+
+        return web.json_response({  
+            "status": "success",  
+            "requested_region": region,  
+            "queried_clan_id": clan_id,  
+            "api_response": api_response_body  
+        }, status=200)
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def handle_add_account(request: web.Request) -> web.Response:
@@ -860,23 +984,36 @@ async def handle_toggle_pause_all(request: web.Request) -> web.Response:
     except Exception as e:
         return web.json_response({"status": "error", "error": str(e)})
 
+async def handle_api_logs(request: web.Request) -> web.Response:
+    formatted_logs = []
+    for entry in bot_state.logs[-80:]:
+        if isinstance(entry, dict):
+            t = entry.get("time", "")
+            msg = entry.get("message", "")
+            level = entry.get("level", "info")
+            color = "#34d399" if level == "success" else ("#f87171" if level == "warning" or level == "error" else "#38bdf8")
+            formatted_logs.append(f'<span style="color:{color}">[{t}] {msg}</span>')
+        else:
+            formatted_logs.append(str(entry))
+    return web.json_response({"logs": formatted_logs}, status=200)
+
+
+# ==================== START WEB DASHBOARD ====================
 
 async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
     app = web.Application()
     app.router.add_get("/", handle_index)
-    app.router.add_static("/assets/", ASSETS_PATH, show_index=False)
+    app.router.add_post("/api/clanjoin", handle_api_clan_join)
+    app.router.add_get("/api/guildinfo", handle_api_guild_info)
     app.router.add_get("/api/stats", handle_get_stats)
-    app.router.add_get("/api/guild", handle_guild_lookup)
-    app.router.add_post("/api/guild/join", handle_guild_join)
-    app.router.add_get("/api/watch", handle_watch_ids)
-    app.router.add_post("/api/watch", handle_watch_ids_update)
+    app.router.add_get("/api/logs", handle_api_logs)
     app.router.add_post("/api/account/add", handle_add_account)
     app.router.add_post("/api/account/delete", handle_delete_account)
     app.router.add_post("/api/account/refresh", handle_refresh_account)
     app.router.add_post("/api/account/restart", handle_restart_account)
     app.router.add_post("/api/account/pause", handle_toggle_pause)
     app.router.add_post("/api/account/pause_all", handle_toggle_pause_all)
-    app.router.add_post("/api/logs/clear", handle_clear_logs)
+    app.router.add_post("/api/logs/clear", handle_clear_logs)    
 
     runner = web.AppRunner(app)
     await runner.setup()

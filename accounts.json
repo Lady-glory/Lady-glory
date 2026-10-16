@@ -1,18 +1,22 @@
 [
   {
-    "uid": "8291667262",
-    "password": "FIUT806YQE9XNO3TOK5MFTRI9BK3GQIM6UID3DB2QJSL9IOJQ6TLLTSXH4YUMRAB"
+    "uid": "8203132712",
+    "auth_type": "access_token",
+    "access_token": "17ac545c52b06bcfd09ff12229b261e1f61c6fbda4693f9d2ba91cdf7c8fdc2b"
   },
   {
-    "uid": "8291667356",
-    "password": "5OJZ06QJYKZRKZWA9TLE6KNUZSK75F79KT6ALDNXMTMFEVCPQGV3VWYDVLPYBHRJ"
+    "uid": "8203132649",
+    "auth_type": "access_token",
+    "access_token": "c06adef16f6b92f7db360bb07d1cafd20b12f2dbbf018fa0009aa6fb26b44109"
   },
   {
-    "uid": "8291667452",
-    "password": "19MUKPFWFLPS7XVM94K4NE23V2WC06JNT0AOB12ZCHMXVF8M3DX67US0MSQ5CD1Z"
+    "uid": "8203132656",
+    "auth_type": "access_token",
+    "access_token": "fc54f9b122478b6d68e1b958c827340fe5436b2c2ad73e02cfce17ce157f1652"
   },
   {
-    "uid": "8291667619",
-    "password": "YE2TA0ERK86DQC7UIL9HKDCMIE2CDFQU3KEFMAP2OU4CEWDVEX48RUY59J09T64G"
+    "uid": "8203132396",
+    "auth_type": "access_token",
+    "access_token": "fb2ae957c1f5750692671cc5fdb5c62e9b20943c21f68a7f36b7f416b3bde8da"
   }
 ]
