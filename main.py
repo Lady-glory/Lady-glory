@@ -1804,11 +1804,13 @@ async def functional_battle_royale(addrs, starter_packet, account_region, client
                     oid = current_account_data.get('account_id', own_id_num) if current_account_data else own_id_num
                     try:
                         rdy = ready_for_game(int(oid), current_key, current_iv)
+                        bot_state.log(f"[TEAM] ready enviado | líder {uid_str} | account={oid} | bytes={len(rdy)}", "info", uid_str)
                         if _writer_ref["w"] and not _writer_ref["w"].is_closing():
                             _writer_ref["w"].write(rdy); await _writer_ref["w"].drain()
                     except Exception as e: print_warning(f"[TEAM] ready err: {e}")
                     await asyncio.sleep(1.0)
                     sm = start_match_team(int(oid), current_key, current_iv, region=account_region)
+                    bot_state.log(f"[TEAM] start_match enviado | líder {uid_str} | account={oid} | bytes={len(sm)}", "info", uid_str)
                     if _writer_ref["w"] and not _writer_ref["w"].is_closing():
                         _writer_ref["w"].write(sm); await _writer_ref["w"].drain()
                 except Exception as e: print_warning(f"[TEAM] start err: {e}")
@@ -1832,10 +1834,12 @@ async def functional_battle_royale(addrs, starter_packet, account_region, client
                     if _writer_ref["w"] and not _writer_ref["w"].is_closing():
                         try:
                             rdy = ready_for_game(int(my_id), current_key, current_iv)
+                            bot_state.log(f"[TEAM] ready enviado | membro {uid_str} | account={my_id} | bytes={len(rdy)}", "info", uid_str)
                             _writer_ref["w"].write(rdy); await _writer_ref["w"].drain()
                         except Exception as e: print_warning(f"[TEAM] member ready err: {e}")
                         await asyncio.sleep(1.0)
                         sm = start_match_team(int(my_id), current_key, current_iv, region=account_region)
+                        bot_state.log(f"[TEAM] start_match enviado | membro {uid_str} | account={my_id} | bytes={len(sm)}", "info", uid_str)
                         _writer_ref["w"].write(sm); await _writer_ref["w"].drain()
                 except Exception as e: print_warning(f"[TEAM] member trigger: {e}")
                 try: await asyncio.wait_for(asyncio.sleep(5.0), timeout=5.5)
@@ -1956,6 +1960,7 @@ async def functional_battle_royale(addrs, starter_packet, account_region, client
                         no_response_count += 1
                         if TEAM_MODE:
                             if no_response_count > TEAM_IDLE_ITERS_TEAM:
+                                bot_state.log(f"[TEAM] sem resposta do gateway após {no_response_count} ciclos | uid={uid_str}", "warning", uid_str)
                                 raise ConnectionError("Team idle timeout")
                         else:
                             if no_response_count > 80: raise ConnectionError("idle")

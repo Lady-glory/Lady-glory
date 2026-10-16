@@ -429,6 +429,24 @@ async def handle_get_stats(request: web.Request) -> web.Response:
         acc["uptime_seconds"] = bot_state.get_account_uptime(uid_k)
         acc["is_paused"] = bot_state.is_paused(uid_k)
 
+    squads = []
+    ordered = sorted(accounts_data, key=lambda x: str(x.get("uid", "")))
+    for offset in range(0, len(ordered), 4):
+        group = ordered[offset:offset + 4]
+        squads.append({
+            "id": f"squad-{(offset // 4) + 1}",
+            "index": (offset // 4) + 1,
+            "capacity": 4,
+            "member_count": len(group),
+            "ready": len(group) == 4,
+            "members": [{
+                "uid": str(account.get("uid", "")),
+                "nickname": account.get("nickname", "—"),
+                "status": account.get("status", "OFFLINE"),
+                "active_matches": account.get("active_matches", 0),
+            } for account in group],
+        })
+
     return web.json_response({
         "total_accounts": len(bot_state.accounts),
         "total_matches": bot_state.total_matches,
@@ -442,6 +460,7 @@ async def handle_get_stats(request: web.Request) -> web.Response:
             **bot_state.team_state,
             "member_count": len(bot_state.team_state.get("members", [])),
         },
+        "squads": squads,
         "uptime": uptime_sec
     })
 
