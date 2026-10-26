@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
-# ═══════════════════════════════════════════════════════════════════
-#  🇧🇩  TCP NAIM — PREMIUM DASHBOARD SERVER  🇧🇩
-#  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#     👑 Owner      : TCP NAIM
-#     🌏 Country    : Bangladesh 🇧🇩
-#     🎮 Purpose    : Real-Time EXP & Squad Dashboard
-#     ⚡ Version    : PREMIUM EDITION v2.0
-#     📅 Build      : 2026
-#  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  ⚠️  Unauthorized copy/redistribution is strictly prohibited!
-#  © 2026 TCP NAIM — All Rights Reserved
-# ═══════════════════════════════════════════════════════════════════
+"""
+FreeFire Level Up Bot - Professional Web Dashboard & Real-Time EXP Tracker
+Embedded Async Web Server (aiohttp)
+Optimized for ultra-smooth operation, zero memory leaks, and dynamic multi-account control.
+"""
 
 import asyncio
 import json
@@ -18,166 +11,8 @@ import os
 import time
 from typing import Dict, List, Any, Optional
 from aiohttp import web
-import urllib3
-import requests
-import httpx
-import jwt
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
-import ReqCLan_pb2
-import encode_id_clan_pb2
-import data_pb2
-import output_pb2
-from google.protobuf.json_format import MessageToDict
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# ═══════════════════════════ BRAND ═══════════════════════════
-BRAND_NAME       = "TCP NAIM"
-BRAND_COUNTRY    = "Bangladesh 🇧🇩"
-BRAND_VERSION    = "PREMIUM v2.0"
-BRAND_YEAR       = "2026"
-BRAND_TAGLINE    = "🔥 Bangladesh's #1 Squad Bot 🔥"
-
-TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "MAHIN_CODEX", "index.html")
-
-OB = "OB55"
-KEY = bytes([89,103,38,116,99,37,68,69,117,104,54,37,90,99,94,56])
-IV  = bytes([54,111,121,90,68,114,50,50,69,51,121,99,104,106,77,37])
-
-GAME_HEADERS = {
-    "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9)",
-    "Connection": "Keep-Alive",
-    "Accept-Encoding": "gzip",
-    "Content-Type": "application/octet-stream",
-    "X-Unity-Version": "2018.4.11f1",
-    "X-GA": "v1 1",
-    "ReleaseVersion": OB,
-    "Expect": "100-continue"
-}
-
-# ═══════════════════════════ 🇧🇩 BD FIRST — Region Map ═══════════════════════════
-REGION_SERVER_MAP = {
-    # 🇧🇩 Bangladesh FIRST (Priority)
-    "BD":  ("https://clientbp.ggwhitehawk.com", "clientbp.ggwhitehawk.com"),
-    "BGD": ("https://clientbp.ggwhitehawk.com", "clientbp.ggwhitehawk.com"),
-    # Other regions
-    "IND": ("https://client.ind.freefiremobile.com", "client.ind.freefiremobile.com"),
-    "IN":  ("https://client.ind.freefiremobile.com", "client.ind.freefiremobile.com"),
-    "ME":  ("https://clientbp.ggblueshark.com", "clientbp.ggblueshark.com"),
-    "VN":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
-    "PK":  ("https://clientbp.ggblueshark.com", "clientbp.ggblueshark.com"),
-    "SG":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
-    "BR":  ("https://client.us.freefiremobile.com", "client.us.freefiremobile.com"),
-    "NA":  ("https://client.us.freefiremobile.com", "client.us.freefiremobile.com"),
-    "ID":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
-    "RU":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
-    "TH":  ("https://clientbp.ggpolarbear.com", "clientbp.ggpolarbear.com"),
-    "SAC": ("https://client.br.freefiremobile.com", "client.br.freefiremobile.com"),
-    "TW":  ("https://client.tw.freefiremobile.com", "client.tw.freefiremobile.com"),
-    "CIS": ("https://client.cis.freefiremobile.com", "client.cis.freefiremobile.com"),
-}
-DEFAULT_SERVER_URL = "https://clientbp.ggwhitehawk.com"  # 🇧🇩 BD default
-DEFAULT_HOST = "clientbp.ggwhitehawk.com"                # 🇧🇩 BD default
-DEFAULT_REGION = "BD"                                    # 🇧🇩 BD default
-
-def encrypt_payload(data):
-    cipher = AES.new(KEY, AES.MODE_CBC, IV)
-    return cipher.encrypt(pad(data, AES.block_size))
-
-def get_server_info(region):
-    val = REGION_SERVER_MAP.get(str(region).upper(), DEFAULT_SERVER_URL)
-    if isinstance(val, tuple):
-        return val
-    return (val, DEFAULT_HOST)
-
-def get_server_url(region):
-    info = get_server_info(region)
-    return info[0] if isinstance(info, tuple) else info
-
-def fetch_single_clan(clan_id, region, token_cache):
-    server_base, host = get_server_info(region)
-    url = f"{server_base}/GetClanInfoByClanID"
-
-    try:
-        my_data = encode_id_clan_pb2.MyData()
-        my_data.field1 = int(clan_id)
-        my_data.field2 = 1
-        payload = encrypt_payload(my_data.SerializeToString())
-    except Exception as e:
-        return {"clan_id": clan_id, "error": f"Protobuf failed: {str(e)}"}
-
-    response = None
-    for uid, creds in token_cache.items():
-        token = creds.get('token')
-        if not token:
-            continue
-
-        headers = GAME_HEADERS.copy()
-        headers["Authorization"] = f"Bearer {token}" if not token.startswith("Bearer ") else token
-        headers["Host"] = host
-
-        try:
-            res = requests.post(url, headers=headers, data=payload, verify=False, timeout=15.0)
-            if res.status_code == 200:
-                response = res
-                break
-            elif "expired" in res.text.lower() or res.status_code == 401:
-                continue
-            else:
-                response = res
-                break
-        except Exception:
-            continue
-
-    if not response or response.status_code != 200:
-        return {"clan_id": clan_id, "error": "All tokens failed or expired"}
-
-    full_response = {}
-    resp = None
-    try:
-        resp = data_pb2.response()
-        resp.ParseFromString(response.content)
-        full_response = MessageToDict(resp, preserving_proto_field_name=True)
-    except Exception:
-        pass
-
-    guild_xp = 0
-    if resp:
-        for field_desc, val in resp.ListFields():
-            if field_desc.number == 36 and isinstance(val, int):
-                guild_xp = val
-                break
-
-    if guild_xp == 0 and full_response:
-        guild_xp = int(full_response.get("field_36") or full_response.get("xp") or 0)
-
-    return {
-        "captain_id": getattr(resp, "captain_id", 0) if resp else full_response.get("captain_id", 0),
-        "clan_id": int(clan_id),
-        "clan_level": getattr(resp, "rank", 4) if resp else full_response.get("rank", 4),
-        "clan_name": getattr(resp, "special_code", None) if resp else (full_response.get("special_code") or f"Guild_{clan_id}"),
-        "current_officer": full_response.get("current_officer", 0),
-        "current_members": full_response.get("current_members", 1),
-        "max_members": full_response.get("max_members", 50),
-        "Total guild xp": int(guild_xp),
-        "welcome_message": getattr(resp, "welcome_message", "") if resp else full_response.get("welcome_message", ""),
-        "region": region,
-        "xp": int(guild_xp),
-        "raw_response_bytes": response.content.hex()
-    }
-
-async def request_clan_async(jwt_token, clan_id, region):
-    server_url = get_server_url(region)
-    msg = ReqCLan_pb2.MyMessage()
-    msg.field_1 = int(clan_id)
-    payload = encrypt_payload(msg.SerializeToString())
-    headers = GAME_HEADERS.copy()
-    headers["Authorization"] = f"Bearer {jwt_token}" if not jwt_token.startswith("Bearer ") else jwt_token
-    url = f"{server_url}/RequestJoinClan"
-    async with httpx.AsyncClient(verify=False, timeout=8.0) as client:
-        r = await client.post(url, headers=headers, content=payload)
-        return r.status_code, r.text
+TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "index.html")
 
 EXP_TABLE: Dict[int, int] = {
     1: 0, 2: 48, 3: 202, 4: 544, 5: 1012, 6: 1844, 7: 2792, 8: 3800,
@@ -198,48 +33,6 @@ EXP_TABLE: Dict[int, int] = {
     100: 32032884
 }
 
-async def handle_index(request: web.Request) -> web.Response:
-    content = FALLBACK_INDEX_HTML
-    if os.path.exists(TEMPLATE_PATH):
-        try:
-            with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-                content = f.read()
-        except Exception:
-            pass
-    return web.Response(text=content, content_type="text/html", charset="utf-8")
-
-
-async def handle_get_stats(request: web.Request) -> web.Response:
-    accounts_data = list(bot_state.accounts.values())
-    accounts_data.sort(key=lambda x: x.get("gained_exp", 0), reverse=True)
-    uptime_sec = max(1, int(time.time() - bot_state.start_time))
-    total_gained = bot_state.total_gained_exp
-    exp_per_hour = int((total_gained / uptime_sec) * 3600)
-    total_active_matches = sum(acc.get("active_matches", 0) for acc in accounts_data)
-
-    for acc in accounts_data:
-        uid_k = str(acc.get("uid", ""))
-        acc["uptime_seconds"] = bot_state.get_account_uptime(uid_k)
-        acc["is_paused"] = bot_state.is_paused(uid_k)
-
-    return web.json_response({
-        "brand": {
-            "name": BRAND_NAME,
-            "country": BRAND_COUNTRY,
-            "version": BRAND_VERSION,
-            "year": BRAND_YEAR,
-            "tagline": BRAND_TAGLINE
-        },
-        "total_accounts": len(bot_state.accounts),
-        "total_matches": bot_state.total_matches,
-        "total_matches_started": bot_state.total_matches_started,
-        "total_active_matches": total_active_matches,
-        "total_gained_exp": total_gained,
-        "exp_per_hour": exp_per_hour,
-        "accounts": accounts_data,
-        "logs": bot_state.logs[-80:],
-        "uptime": uptime_sec
-    })
 
 def calculate_level_progress(level: int, current_exp: int) -> Dict[str, Any]:
     level = max(1, level)
@@ -262,6 +55,8 @@ def calculate_level_progress(level: int, current_exp: int) -> Dict[str, Any]:
         "progress_pct": round(progress_pct, 1)
     }
 
+
+# Global bot state shared between Main.py and Web Dashboard
 class BotState:
     def __init__(self):
         self.accounts: Dict[str, Dict[str, Any]] = {}
@@ -356,7 +151,7 @@ class BotState:
                 "uid": uid_str,
                 "auth_uid": auth_uid_str or "",
                 "nickname": nickname or f"Player_{uid_str[:6]}",
-                "region": region or DEFAULT_REGION,
+                "region": region or "BD",
                 "level": lvl_val,
                 "next_level": prog["next_level"],
                 "mode": acc_mode,
@@ -579,94 +374,19 @@ class BotState:
 
 bot_state = BotState()
 
-# ═══════════════════════════ 🇧🇩 PREMIUM FALLBACK ═══════════════════════════
+
+# Fallback HTML if templates/index.html is missing
 FALLBACK_INDEX_HTML = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>🇧🇩 TCP NAIM — Premium Squad Bot Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  background: radial-gradient(ellipse at top, #1a0018 0%, #0a0010 40%, #000 100%);
-  color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif;
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.container {
-  text-align: center; padding: 60px 40px;
-  background: rgba(20, 0, 30, 0.6);
-  border: 2px solid #ff3366;
-  border-radius: 24px;
-  box-shadow: 0 0 60px rgba(255, 51, 102, 0.4), 0 0 120px rgba(0, 255, 100, 0.15);
-  max-width: 640px; width: 100%;
-  backdrop-filter: blur(10px);
-}
-h1 {
-  font-size: 3rem; font-weight: 900; letter-spacing: 4px;
-  background: linear-gradient(90deg, #ff3366 0%, #00ff64 50%, #ffcc00 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text; text-fill-color: transparent;
-  margin-bottom: 12px;
-  text-shadow: 0 0 40px rgba(255, 51, 102, 0.5);
-}
-h2 {
-  font-size: 1.3rem; color: #00ff64; font-weight: 600;
-  letter-spacing: 2px; margin-bottom: 28px;
-}
-.badge {
-  display: inline-block; padding: 8px 20px; margin: 6px;
-  border-radius: 30px; font-size: 0.85rem; font-weight: 700;
-  letter-spacing: 1px;
-}
-.badge-bd { background: linear-gradient(90deg, #006a4e, #f42a41); color:#fff; }
-.badge-gold { background: linear-gradient(90deg, #ffcc00, #ff8800); color:#000; }
-.badge-cyan { background: linear-gradient(90deg, #00d4ff, #0099ff); color:#000; }
-.status {
-  margin-top: 32px; padding: 16px 24px;
-  background: rgba(0, 255, 100, 0.08);
-  border: 1px solid rgba(0, 255, 100, 0.4);
-  border-radius: 14px; color: #00ff64;
-  font-weight: 600; letter-spacing: 1.5px;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 100, 0.2); }
-  50% { box-shadow: 0 0 40px rgba(0, 255, 100, 0.5); }
-}
-.footer {
-  margin-top: 32px; padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: #888; font-size: 0.8rem; letter-spacing: 1px;
-}
-.footer strong { color: #ff3366; }
-.flag { font-size: 1.4rem; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="flag">🇧🇩</div>
-  <h1>TCP NAIM</h1>
-  <h2>PREMIUM SQUAD BOT DASHBOARD</h2>
-
-  <div>
-    <span class="badge badge-bd">🇧🇩 Bangladesh Edition</span>
-    <span class="badge badge-gold">⚡ PREMIUM v2.0</span>
-    <span class="badge badge-cyan">🎮 Battle Royale</span>
-  </div>
-
-  <div class="status">
-    ✅ BOT IS RUNNING — Dashboard Interface Loaded Successfully
-  </div>
-
-  <div class="footer">
-    © 2026 <strong>TCP NAIM</strong> — All Rights Reserved<br>
-    <span style="font-size:0.7rem;opacity:0.6;">🔥 Bangladesh's #1 Squad Bot 🔥</span>
-  </div>
-</div>
+<html>
+<head><title>Command Center</title></head>
+<body style="background:#0a0a12;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
+<h1>BOT RUNNING</h1>
+<p>templates/index.html is loading...</p>
 </body>
 </html>"""
+
+
+# ==================== HTTP HANDLERS ====================
 
 async def handle_index(request: web.Request) -> web.Response:
     content = FALLBACK_INDEX_HTML
@@ -678,136 +398,31 @@ async def handle_index(request: web.Request) -> web.Response:
             pass
     return web.Response(text=content, content_type="text/html", charset="utf-8")
 
-# ==================== 🇧🇩 CLAN JOIN API ENDPOINT ====================
-async def handle_api_clan_join(request: web.Request) -> web.Response:
-    try:
-        data = await request.json()
-        clan_id = data.get('clan_id')
-        if not clan_id:
-            return web.json_response({'error': 'Clan ID is required'}, status=400)
 
-        try:
-            with open("token_cache.json", "r", encoding="utf-8") as f:
-                token_cache = json.load(f)
-        except Exception as e:
-            return web.json_response({'error': f'Failed to load token_cache.json: {str(e)}'}, status=500)
+async def handle_get_stats(request: web.Request) -> web.Response:
+    accounts_data = list(bot_state.accounts.values())
+    accounts_data.sort(key=lambda x: x.get("gained_exp", 0), reverse=True)
+    uptime_sec = max(1, int(time.time() - bot_state.start_time))
+    total_gained = bot_state.total_gained_exp
+    exp_per_hour = int((total_gained / uptime_sec) * 3600)
+    total_active_matches = sum(acc.get("active_matches", 0) for acc in accounts_data)
 
-        success_count = 0
-        total_accounts = 0
-        for uid, creds in token_cache.items():
-            jwt_token = creds.get('token')
-            region = creds.get('region', DEFAULT_REGION)
-            if not jwt_token:
-                continue
+    for acc in accounts_data:
+        uid_k = str(acc.get("uid", ""))
+        acc["uptime_seconds"] = bot_state.get_account_uptime(uid_k)
+        acc["is_paused"] = bot_state.is_paused(uid_k)
 
-            total_accounts += 1
-            try:
-                status_code, text_resp = await request_clan_async(jwt_token, clan_id, region)
-                if status_code == 200:
-                    success_count += 1
-            except Exception:
-                pass
-
-        return web.json_response({
-            'brand': BRAND_NAME,
-            'message': f'✅ Clan join requests sent successfully for {success_count} / {total_accounts} accounts! 🇧🇩'
-        }, status=200)
-    except Exception as e:
-        return web.json_response({'error': str(e)}, status=500)
-
-# ==================== 🇧🇩 GUILD INFO API ENDPOINT ====================
-GUILD_CACHE_FILE = "guild_exp_cache.json"
-
-def load_guild_cache():
-    if os.path.exists(GUILD_CACHE_FILE):
-        try:
-            with open(GUILD_CACHE_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
-
-def save_guild_cache(cache_data):
-    try:
-        with open(GUILD_CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, indent=4)
-    except Exception:
-        pass
-
-def get_persisted_baseline_xp(clan_id, current_xp):
-    cache = load_guild_cache()
-    clan_key = str(clan_id)
-
-    if clan_key not in cache or "old_xp" not in cache[clan_key]:
-        cache[clan_key] = {
-            "old_xp": current_xp,
-            "live_xp": current_xp,
-            "gained_exp": 0
-        }
-        save_guild_cache(cache)
-        return current_xp
-
-    return int(cache[clan_key]["old_xp"])
-
-async def handle_api_guild_info(request: web.Request) -> web.Response:
-    try:
-        clan_id = request.query.get('guild_id') or request.query.get('clan_uid') or request.query.get('clan_id')
-        region = (request.query.get('region') or DEFAULT_REGION).upper()
-        api_key = request.query.get('key')
-
-        if not api_key or api_key != "XEROX_MODS":
-            return web.json_response({"error": "Unauthorized: Invalid or missing API key"}, status=401)
-
-        if not clan_id:
-            return web.json_response({"error": "guild_id is required"}, status=400)
-
-        try:
-            with open("token_cache.json", "r", encoding="utf-8") as f:
-                token_cache = json.load(f)
-        except Exception as e:
-            return web.json_response({"error": "Failed to load token_cache.json", "details": str(e)}, status=503)
-
-        if not token_cache:
-            return web.json_response({"error": "token_cache.json is empty"}, status=503)
-
-        clan_data = fetch_single_clan(clan_id, region, token_cache)
-        if "error" in clan_data:
-            return web.json_response(clan_data, status=500)
-
-        current_xp = int(clan_data.get("Total guild xp") or clan_data.get("xp") or 0)
-        baseline_xp = get_persisted_baseline_xp(clan_id, current_xp)
-        gained_exp = current_xp - baseline_xp
-
-        cache = load_guild_cache()
-        cache[str(clan_id)] = {
-            "old_xp": baseline_xp,
-            "live_xp": current_xp,
-            "gained_exp": gained_exp
-        }
-        save_guild_cache(cache)
-
-        clan_data["old_xp"] = baseline_xp
-        clan_data["gained_exp"] = gained_exp
-
-        api_response_body = {
-            "DEVLOVER": BRAND_NAME,
-            "TELEGRAM": "RAFIN_TxT",
-            "COUNTRY": BRAND_COUNTRY,
-            "VERSION": BRAND_VERSION,
-            "TIME AND DATE": time.strftime("%I:%M %p, %A, %B %d, %Y"),
-            "clan_basic_info": clan_data
-        }
-
-        return web.json_response({
-            "status": "success",
-            "brand": BRAND_NAME,
-            "requested_region": region,
-            "queried_clan_id": clan_id,
-            "api_response": api_response_body
-        }, status=200)
-
-    except Exception as e:
-        return web.json_response({"error": str(e)}, status=500)
+    return web.json_response({
+        "total_accounts": len(bot_state.accounts),
+        "total_matches": bot_state.total_matches,
+        "total_matches_started": bot_state.total_matches_started,
+        "total_active_matches": total_active_matches,
+        "total_gained_exp": total_gained,
+        "exp_per_hour": exp_per_hour,
+        "accounts": accounts_data,
+        "logs": bot_state.logs[-80:],
+        "uptime": uptime_sec
+    })
 
 
 async def handle_add_account(request: web.Request) -> web.Response:
@@ -862,13 +477,15 @@ async def handle_add_account(request: web.Request) -> web.Response:
         with open(accounts_file, "w", encoding="utf-8") as f:
             json.dump(existing, f, indent=2)
 
-        bot_state.log(f"🇧🇩 New account added to rotation: {identifier}", "success")
+        bot_state.log(f"New account added to rotation: {identifier}", "success")
+        print(f"[WEB] Account added: {identifier}")
 
         if "on_account_added" in bot_state.refresh_callbacks:
             asyncio.create_task(bot_state.refresh_callbacks["on_account_added"](data))
 
-        return web.json_response({"status": "ok", "brand": BRAND_NAME})
+        return web.json_response({"status": "ok"})
     except Exception as e:
+        print(f"[WEB ERROR] handle_add_account: {e}")
         return web.json_response({"status": "error", "error": str(e)})
 
 
@@ -1023,9 +640,9 @@ async def handle_delete_account(request: web.Request) -> web.Response:
                 pass
 
         target_repr = req_uid or req_auth_uid
-        bot_state.log(f"🗑️ Account {target_repr} completely deleted from system and stopped.", "warning", target_repr)
+        bot_state.log(f"Account {target_repr} completely deleted from system and stopped.", "warning", target_repr)
         bot_state.recalc_totals()
-        return web.json_response({"status": "ok", "deleted": list(candidate_ids), "brand": BRAND_NAME})
+        return web.json_response({"status": "ok", "deleted": list(candidate_ids)})
     except Exception as e:
         return web.json_response({"status": "error", "error": str(e)})
 
@@ -1079,55 +696,74 @@ async def handle_toggle_pause_all(request: web.Request) -> web.Response:
         return web.json_response({"status": "error", "error": str(e)})
 
 
-async def handle_api_logs(request: web.Request) -> web.Response:
-    formatted_logs = []
-    for entry in bot_state.logs[-80:]:
-        if isinstance(entry, dict):
-            t = entry.get("time", "")
-            msg = entry.get("message", "")
-            level = entry.get("level", "info")
-            # 🇧🇩 RAFIN Premium Colors
-            if level == "success":
-                color = "#00ff64"     # BD Green
-            elif level in ("warning", "error"):
-                color = "#f42a41"     # BD Red
-            else:
-                color = "#00d4ff"     # Cyan
-            formatted_logs.append(f'<span style="color:{color}">[{t}] {msg}</span>')
-        else:
-            formatted_logs.append(str(entry))
-    return web.json_response({"logs": formatted_logs}, status=200)
+# ==================== WEB SERVER STARTUP ====================
 
-
-# ==================== 🇧🇩 START WEB DASHBOARD ====================
-async def start_web_dashboard(host: str = "0.0.0.0", port: int = 20333):
+async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
     app = web.Application()
+
+    # ---------- CORS + request logging middleware ----------
+    @web.middleware
+    async def cors_and_log_middleware(request, handler):
+        try:
+            print(f"[WEB] {request.method} {request.path} from {request.remote}")
+        except Exception:
+            pass
+
+        # Handle CORS preflight
+        if request.method == "OPTIONS":
+            return web.Response(
+                status=204,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                    "Access-Control-Max-Age": "86400",
+                },
+            )
+
+        try:
+            response = await handler(request)
+        except Exception as e:
+            print(f"[WEB ERROR] {request.method} {request.path}: {e}")
+            response = web.json_response({"status": "error", "error": str(e)}, status=500)
+
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
+
+    app.middlewares.append(cors_and_log_middleware)
+
+    # ---------- Routes (with and without trailing slash) ----------
     app.router.add_get("/", handle_index)
-    app.router.add_post("/api/clanjoin", handle_api_clan_join)
-    app.router.add_get("/api/guildinfo", handle_api_guild_info)
+
     app.router.add_get("/api/stats", handle_get_stats)
-    app.router.add_get("/api/logs", handle_api_logs)
+    app.router.add_get("/api/stats/", handle_get_stats)
+
     app.router.add_post("/api/account/add", handle_add_account)
+    app.router.add_post("/api/account/add/", handle_add_account)
+
     app.router.add_post("/api/account/delete", handle_delete_account)
+    app.router.add_post("/api/account/delete/", handle_delete_account)
+
     app.router.add_post("/api/account/refresh", handle_refresh_account)
+    app.router.add_post("/api/account/refresh/", handle_refresh_account)
+
     app.router.add_post("/api/account/restart", handle_restart_account)
+    app.router.add_post("/api/account/restart/", handle_restart_account)
+
     app.router.add_post("/api/account/pause", handle_toggle_pause)
+    app.router.add_post("/api/account/pause/", handle_toggle_pause)
+
     app.router.add_post("/api/account/pause_all", handle_toggle_pause_all)
+    app.router.add_post("/api/account/pause_all/", handle_toggle_pause_all)
+
     app.router.add_post("/api/logs/clear", handle_clear_logs)
+    app.router.add_post("/api/logs/clear/", handle_clear_logs)
 
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
-
-    # 🇧🇩 Premium startup log
-    print("\033[38;5;196m" + "═" * 64 + "\033[0m")
-    print("\033[38;5;46m  🇧🇩  TCP NAIM — PREMIUM DASHBOARD SERVER  🇧🇩\033[0m")
-    print("\033[38;5;220m  ⚡ PREMIUM SQUAD BOT v2.0 | © 2026 TCP NAIM\033[0m")
-    print("\033[38;5;196m" + "═" * 64 + "\033[0m")
-    print(f"\033[38;5;46m  ✔ Dashboard URL : http://{host}:{port}\033[0m")
-    print(f"\033[38;5;220m  🌏 Country       : Bangladesh 🇧🇩\033[0m")
-    print(f"\033[38;5;51m  🎮 Mode          : Battle Royale Squad\033[0m")
-    print("\033[38;5;196m" + "═" * 64 + "\033[0m\n")
-
+    print(f"[WEB] Server running on http://{host}:{port}")
     return runner
