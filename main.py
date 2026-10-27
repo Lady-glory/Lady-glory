@@ -1363,14 +1363,14 @@ async def build_tcp_startup_packet(account_id, token, server_time, key, iv, regi
     enc_len = f"{len(enc)//2:08x}"
     reg = str(region).upper() if region else "BD"
     if typ == 'OnLine':
-        pfx = '7219' if reg == 'BD' else ('7214' if reg == 'IND' else '7215')
+        pfx = '7219' if reg == 'BD' else ('7214' if reg == 'BR' else '7215')
         return f"{pfx}{uid_hex}{ts_hex}00000000{enc_len}{enc}"
-    pfx = '8119' if reg == 'BD' else ('8114' if reg == 'IND' else '8115')
+    pfx = '8119' if reg == 'BD' else ('8114' if reg == 'BR' else '8115')
     return f"{pfx}{uid_hex}{ts_hex}{enc_len}{enc}"
 
 async def send_keep_alive(region="BD"):
     reg = str(region).upper() if region else "BD"
-    return bytes.fromhex("0219" if reg == "BD" else ("0214" if reg == "IND" else "0215"))
+    return bytes.fromhex("0219" if reg == "BD" else ("0214" if reg == "BR" else "0215"))
 
 async def start_game_battle_royale(region, client_version, writer, key, iv):
     packet = bytes.fromhex("080112800a0a010110013a110a044944433110aa011a064555524f50453a100a044944433210311a064555524f504540014a0801090a0b1219202758016291090a8001303838463832424630324139363736373032303130313030303030303030303030303136303030313030313530303032323246393745454530463030303030303436373632353134303030303030303030303030303030303030303030303030303030303030303030303030303066663030303030303030636163666131366410241afb02735d5e571400024a775d45414d1a041b1c001f11010449715f4243481a001e1d071c1703004b1a4066785c524570735c51486775421b5c5a4c07504042685a63610816054e19025e75196001477c015165406370195f5547404e4550640103020f1304064863754268676c755f65576e40467e5f0a417a4701026d675d6e73670b1108495a4c6a0b78470b740065645e525a057258425f584a447d4e6759440c11044e7c596d7f4b625f7d04055a47505c4e1d6b5b4107447d7201057d7f0f14084e430457674f7e517d72015172415d027473577c4d615f79535256780911030f4d5e027a797f614165067806505d53777750475e75064257076500460817014e741e7e5078487e7a7c465e7669767153497064605a7376677773550d160148037e18675966787f4c42607a645f577e7b441b460776026b18685d0b110205490060020f70676175654674706671797f41067346677c4e06585e780f15074c57047b40517075415f6364027259674b5b0166407f7340600407770a22047a5d5c52300b3a0a167305067162727516134208312e3133302e3232480350015ae90403626253513635686e556f4e36416456324b796f566c636f477776484f624e56526c4d727073504b4f43654177616848494176795556497273743752737149734a7a786b3247525268377a2f637664626d504f6a73552f79626d38547a4c69586d2f474351696d494b53486833447955726f39515152756c345350626d6d624b7949565937545671577059455372323646572f59624578507338514f706d317372785455736c30796a434144444d4f34616a654b615753366361496c554b4963797a494e396d52516f715277687939797257476d337a644345337a6a61436f492f5a585233656f65365a42647a64677654636b6b665733356e4d4c6a6a565072564b6433523172756174394e50514150724a5546627859696c4c5a3859707336654d5447666b6649793574666a526c314d4648706b51774c6373374439656378566c41636f374e664f6d2b30654756466c4434744478706771385533595973587645384842502f70666c767a737138316a32524f4d7857437556445442492f684735625462773166456e4249725162762b636144775147696f74554e316d4c4b77734379456f4766706746614251457645672b736a764c4c78704743334c304a5344532f74526169504354553344374e6249306547516651622f5a466f4c36455630775a324d6f583932414c572f5049752f56634663584e70596b356f7966326151416a536971486a2f363276354843644f525551303578754e6171795251625653704654303137655237675255636b4966366c6f447476342b514e4a4670766d74757077707774396a5a5974437a4b56743657726d6e36785837706658456251555434684f3758a201050803108703a201050804108103a20105080510c001a20105081d10cc01a2010408161078a20105080e10af01a201020815")
@@ -1390,7 +1390,7 @@ async def start_game_battle_royale(region, client_version, writer, key, iv):
     hexlen = hex(plen)[2:]
     if len(hexlen) < 2: hexlen = "0" + hexlen
     reg = str(region).upper() if region else "BD"
-    pfx = "031900" if reg == "BD" else ("031400" if reg == "IND" else "031500")
+    pfx = "031900" if reg == "BD" else ("031400" if reg == "BR" else "031500")
     final = pfx + "0"*(6-len(hexlen)) + hexlen + enc
     writer.write(bytes.fromhex(final))
     await writer.drain()
@@ -2850,7 +2850,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 2, passwo
                     if not major_payload or not login_payload:
                         await asyncio.sleep(2); continue
 
-                    nickname_final = f"AVI-{''.join(random.choices(string.ascii_uppercase + string.digits, k=5))}"
+                    nickname_final = f"LADY-{''.join(random.choices(string.ascii_uppercase + string.digits, k=5))}"
                     mr = await major_register(release_v, access_token, open_id,
                                               nickname_final, game_version, login_url, lang)
                     if not mr:
@@ -2990,7 +2990,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 2, passwo
 
 async def account_loop_token(token):
     try:
-        vc = await version_config("BD")
+        vc = await version_config("BR")
         if not vc: return
         release_version, client_version, server_url, gop_1, app_version = vc
         url = f"https://100067.connect.garena.com/oauth/token/inspect?token={token}"
@@ -3917,7 +3917,7 @@ async def api_ping(request):
 
 async def api_guildinfo(request):
     guild_id = request.query.get("guild_id", CLAN_ID_DEFAULT)
-    region = request.query.get("region", "IND")
+    region = request.query.get("region", "BR")
     gained = bot_state.total_exp_gained
     initial_xp = sum(a.get("initial_exp", 0) for a in bot_state.accounts.values())
     current_xp = initial_xp + gained
