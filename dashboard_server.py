@@ -126,7 +126,8 @@ class BotState:
             self.logs.pop(0)
 
     def register_account(self, uid: str, nickname: str, region: str, level: int, exp: int,
-                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None):
+                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None,
+                         clan_id: Optional[str] = None): # <--- Clan ID যোগ করা হলো
         uid_str = str(uid)
         auth_uid_str = str(auth_uid) if auth_uid else self.game_to_auth_id.get(uid_str, "")
         if auth_uid_str:
