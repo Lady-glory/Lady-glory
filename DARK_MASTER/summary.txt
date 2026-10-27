@@ -2,14 +2,14 @@
        DARK MASTER - GENERATION SUMMARY
 ============================================================
 
-Session    : 2026-10-13_18-45-40
+Session    : 2026-10-20_11-26-24
 Folder     : DARK_MASTER
 Server     : India (IND)
-Total Gen  : 5
-UID Files  : 5
-JWT Files  : 5
-Prefix     : gojole
-Created    : 2026-10-13 22:11:02
+Total Gen  : 4
+UID Files  : 4
+JWT Files  : 4
+Prefix     : UNFAIR
+Created    : 2026-10-20 11:27:12
 
 ============================================================
 FILES IN THIS FOLDER:
