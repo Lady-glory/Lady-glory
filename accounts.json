@@ -1,29 +1,5 @@
 [
   {
-    "uid": "8359217398",
-    "password": "87A28476AEB5A79E12101EFB9431958B4F40161A96F42682C887545E735341F7",
-    "region": "BR",
-    "clan_id": "2055589692"
-  },
-  {
-    "uid": "8359217408",
-    "password": "B7DC8B7439C49ECD611424324182B34C5730BAFF4EEBAFFE631828ABB806A905",
-    "region": "BR",
-    "clan_id": "2055589692"
-  },
-  {
-    "uid": "8359217422",
-    "password": "1FAA4F650A322E5677CEB10A71A439E5250E86B17461069F189B8139B18281AE",
-    "region": "BR",
-    "clan_id": "2055589692"
-  },
-  {
-    "uid": "8359217695",
-    "password": "5148272CCACC093191CD3AA6AC009A6AACAAE63A5ED9983218E5682283801E43",
-    "region": "BR",
-    "clan_id": "2055589692"
-  },
-  {
     "uid": "8360381126",
     "password": "AVI_CODEX",
     "region": "BR",
@@ -43,6 +19,30 @@
   },
   {
     "uid": "8360395091",
+    "password": "AVI_CODEX",
+    "region": "BR",
+    "clan_id": "2055589692"
+  },
+  {
+    "uid": "8365550079",
+    "password": "AVI_CODEX",
+    "region": "BR",
+    "clan_id": "2055589692"
+  },
+  {
+    "uid": "8365552019",
+    "password": "AVI_CODEX",
+    "region": "BR",
+    "clan_id": "2055589692"
+  },
+  {
+    "uid": "8365567930",
+    "password": "AVI_CODEX",
+    "region": "BR",
+    "clan_id": "2055589692"
+  },
+  {
+    "uid": "8365570435",
     "password": "AVI_CODEX",
     "region": "BR",
     "clan_id": "2055589692"
