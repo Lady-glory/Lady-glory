@@ -1,8 +1,37 @@
 # -*- coding: utf-8 -*-
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║                                                                      ║
+# ║   ██████╗  ██████╗ ███╗   ██╗     ██████╗ ██████╗ ██████╗ ███████╗  ║
+# ║   ██╔══██╗██╔══██╗████╗  ██║    ██╔════╝██╔═══██╗██╔══██╗██╔════╝  ║
+# ║   ██████╔╝██████╔╝██╔██╗ ██║    ██║     ██║   ██║██║  ██║█████╗    ║
+# ║   ██╔═══╝ ██╔══██╗██║╚██╗██║    ██║     ██║   ██║██║  ██║██╔══╝    ║
+# ║   ██║     ██║  ██║██║ ╚████║    ╚██████╗╚██████╔╝██████╔╝███████╗  ║
+# ║   ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝  ║
+# ║                                                                      ║
+# ║                    ★  P R N   C O D E X  ★                           ║
+# ║                      P R E M I U M   E D I T I O N                   ║
+# ║                                                                      ║
+# ║                         OWNER: PRN CODEX                             ║
+# ║                         STATUS: ACTIVE                               ║
+# ║                                                                      ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+#  ┌──────────────────────────────────────────────────────────────────┐
+#  │  Project      :  FreeFire Level Up Bot                           │
+#  │  Module       :  Web Dashboard & Real-Time EXP Tracker           │
+#  │  Author       :  PRN CODEX                                       │
+#  │  Server       :  aiohttp Embedded Async Web Server                │
+#  │  Language     :  Python                                          │
+#  └──────────────────────────────────────────────────────────────────┘
+#
+#  © PRN CODEX — All rights reserved.
+#
 """
-FreeFire Level Up Bot - Professional Web Dashboard & Real-Time EXP Tracker
+PRN CODEX — FreeFire Level Up Bot
+Professional Web Dashboard & Real-Time EXP Tracker.
+
 Embedded Async Web Server (aiohttp)
-Optimized for ultra-smooth operation, zero memory leaks, and dynamic multi-account control.
+Optimized for ultra-smooth operation, zero memory leaks, and dynamic
+multi-account control.
 """
 
 import asyncio
@@ -126,8 +155,7 @@ class BotState:
             self.logs.pop(0)
 
     def register_account(self, uid: str, nickname: str, region: str, level: int, exp: int,
-                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None,
-                         clan_id: Optional[str] = None): # <--- Clan ID যোগ করা হলো
+                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None):
         uid_str = str(uid)
         auth_uid_str = str(auth_uid) if auth_uid else self.game_to_auth_id.get(uid_str, "")
         if auth_uid_str:
@@ -379,10 +407,10 @@ bot_state = BotState()
 # Fallback HTML if templates/index.html is missing
 FALLBACK_INDEX_HTML = """<!DOCTYPE html>
 <html>
-<head><title>Command Center</title></head>
+<head><title>PRN CODEX — Command Center</title></head>
 <body style="background:#0a0a12;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
-<h1>BOT RUNNING</h1>
-<p>templates/index.html is loading...</p>
+<h1>PRN CODEX</h1>
+<p>BOT RUNNING — templates/index.html is loading...</p>
 </body>
 </html>"""
 
@@ -414,6 +442,7 @@ async def handle_get_stats(request: web.Request) -> web.Response:
         acc["is_paused"] = bot_state.is_paused(uid_k)
 
     return web.json_response({
+        "brand": "PRN CODEX",
         "total_accounts": len(bot_state.accounts),
         "total_matches": bot_state.total_matches,
         "total_matches_started": bot_state.total_matches_started,
@@ -766,5 +795,9 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
-    print(f"[WEB] Server running on http://{host}:{port}")
+    print(f"[WEB] PRN CODEX Dashboard running on http://{host}:{port}")
     return runner
+
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║   End of file  —  PRN CODEX  —  Premium Edition                      ║
+# ╚══════════════════════════════════════════════════════════════════════╝
