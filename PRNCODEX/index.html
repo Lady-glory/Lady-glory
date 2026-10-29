@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#06070e">
-<title>PRN CODEX | Command Center</title>
+<title>Lady Glory | Painel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -50,7 +50,7 @@ button{cursor:pointer;background:none;border:0}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:ping 2s infinite;flex-shrink:0}
 .pill.off .dot{background:var(--err);animation:none}
 @keyframes ping{70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));min-height:var(--tab-h);background:rgba(8,9,20,.9);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 8px;padding-bottom:max(6px,env(safe-area-inset-bottom));min-height:var(--tab-h);background:rgba(8,9,20,.9);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
 .tabbar[hidden]{display:none}
 .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;border-radius:12px;color:var(--dim);font-size:10.5px;font-weight:600;transition:var(--ease)}
 .tab i{font-size:17px}.tab.team i{color:var(--ok)}
@@ -153,7 +153,21 @@ button{cursor:pointer;background:none;border:0}
 .field select option{background:#0d1030}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent1);box-shadow:0 0 0 3px rgba(139,92,246,.18)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.guild-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;padding:18px}
+.guild-stat{padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.guild-stat span{display:block;color:var(--dim);font-size:12px;font-weight:600;margin-bottom:4px}
+.guild-stat strong{font-size:15px;overflow-wrap:anywhere}
+.guild-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px;margin-top:14px}
+.guild-panel{padding:18px}
+.guild-panel h2{font-size:16px;margin-bottom:12px}
+.guild-panel p{color:var(--dim);margin:5px 0}
+.guild-panel b{color:var(--text)}
+.guild-members{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}
+.guild-member{display:flex;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font-size:12px}
+.guild-member span{color:var(--dim);font-family:'JetBrains Mono',monospace}
+.guild-note{color:var(--dim);font-size:12.5px;margin:12px 2px 0}
 .card-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 @media(max-width:600px){.modal{align-items:flex-end;padding:0}.sheet{max-width:none;border-radius:22px 22px 0 0;padding-bottom:max(26px,env(safe-area-inset-bottom))}.two{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric:last-child{grid-column:1/-1}.pill span{display:none}.pill{width:38px;padding:0;justify-content:center}.page-head .row,.page-head .row .btn{width:100%}.page-head .row .btn{flex:1}}
 .toasts{position:fixed;inset-inline:16px;bottom:16px;z-index:400;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
 .toast{max-width:min(420px,100%);display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:13px;font-weight:600;font-size:13px;background:rgba(14,16,40,.97);border:1px solid var(--line2);border-inline-start:4px solid var(--accent1);box-shadow:0 12px 32px rgba(0,0,0,.5);pointer-events:auto;animation:tin .3s var(--ease) both;transition:border-color 1s ease}
@@ -169,85 +183,109 @@ button{cursor:pointer;background:none;border:0}
 
 <div class="app" id="app">
   <aside class="sidebar">
-    <div class="brand"><div class="logo"><i class="fa-solid fa-bolt"></i></div><div><b>PRN CODEX</b><small>Real-Time Command Center</small></div></div>
+    <div class="brand"><div class="logo"><i class="fa-solid fa-bolt"></i></div><div><b>Lady Glory</b><small>Painel de controle</small></div></div>
     <nav class="nav">
-      <button class="nav-item active" data-page="core" data-title="Command Core"><i class="fa-solid fa-gauge-high"></i>Command Core</button>
-      <button class="nav-item" data-page="targets" data-title="Accounts"><i class="fa-solid fa-network-wired"></i>Accounts</button>
-      <button class="nav-item" data-page="terminal" data-title="Live Console"><i class="fa-solid fa-terminal"></i>Live Console</button>
-      <button class="nav-item team" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Create Team</button>
+      <button class="nav-item active" data-page="core" data-title="Visão geral"><i class="fa-solid fa-gauge-high"></i>Visão geral</button>
+      <button class="nav-item" data-page="targets" data-title="Contas"><i class="fa-solid fa-network-wired"></i>Contas</button>
+      <button class="nav-item" data-page="guild" data-title="Guilda"><i class="fa-solid fa-shield-halved"></i>Guilda</button>
+      <button class="nav-item" data-page="terminal" data-title="Console ao vivo"><i class="fa-solid fa-terminal"></i>Console ao vivo</button>
+      <button class="nav-item team" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Criar equipe</button>
     </nav>
-    <div class="side-foot"><span>Engine status</span><b id="sideStatus">ONLINE</b></div>
+    <div class="side-foot"><span>Status do sistema</span><b id="sideStatus">CONECTADO</b></div>
   </aside>
 
   <div class="shell">
     <header class="topbar">
-      <div class="brand-m"><div class="logo"><i class="fa-solid fa-bolt"></i></div><span>PRN CODEX</span></div>
-      <div class="crumb"><span>Command Center</span><i class="fa-solid fa-chevron-right" style="font-size:10px"></i><b id="topTitle">Command Core</b></div>
+      <div class="brand-m"><div class="logo"><i class="fa-solid fa-bolt"></i></div><span>Lady Glory</span></div>
+      <div class="crumb"><span>Painel de controle</span><i class="fa-solid fa-chevron-right" style="font-size:10px"></i><b id="topTitle">Visão geral</b></div>
       <div class="top-right">
-        <div class="pill" id="pill"><i class="dot"></i><span id="pillText">ONLINE</span></div>
+        <div class="pill" id="pill"><i class="dot"></i><span id="pillText">CONECTADO</span></div>
       </div>
     </header>
 
     <div class="content" id="content">
       <section id="page-core" class="page active">
         <div class="page-head">
-          <div><h1 class="page-title">Command Core</h1><p class="page-sub">Real-time system analytics</p></div>
-          <button class="btn primary" id="syncBtn"><i class="fa-solid fa-rotate" id="syncIcon"></i>Sync</button>
+          <div><h1 class="page-title">Visão geral</h1><p class="page-sub">Acompanhe os indicadores do sistema em tempo real.</p></div>
+          <button class="btn primary" id="syncBtn"><i class="fa-solid fa-rotate" id="syncIcon"></i>Atualizar</button>
         </div>
         <div class="stats">
-          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-label">Active accounts</div></div><div class="stat-val" id="stat-accounts">0</div><div class="stat-foot" id="stat-online">0 Online</div></div>
-          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-rocket"></i></div><div class="stat-label">Matches started</div></div><div class="stat-val" id="stat-started">0</div><div class="stat-foot" id="stat-per-hour">~0 / hour</div></div>
-          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-gamepad"></i></div><div class="stat-label">Matches done</div></div><div class="stat-val" id="stat-completed">0</div><div class="stat-foot" id="stat-active-matches">0 Active</div></div>
-          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-fire-flame-curved"></i></div><div class="stat-label">Total EXP</div></div><div class="stat-val" id="stat-exp">+0</div><div class="stat-foot" id="stat-exp-rate">~0 EXP/hr</div></div>
-          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-clock"></i></div><div class="stat-label">Uptime</div></div><div class="stat-val" id="stat-uptime">00:00:00</div><div class="stat-foot">Command Center running</div></div>
+          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-label">Contas ativas</div></div><div class="stat-val" id="stat-accounts">0</div><div class="stat-foot" id="stat-online">0 online</div></div>
+          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-rocket"></i></div><div class="stat-label">Partidas iniciadas</div></div><div class="stat-val" id="stat-started">0</div><div class="stat-foot" id="stat-per-hour">~0 / hora</div></div>
+          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-gamepad"></i></div><div class="stat-label">Partidas concluídas</div></div><div class="stat-val" id="stat-completed">0</div><div class="stat-foot" id="stat-active-matches">0 ativas</div></div>
+          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-fire-flame-curved"></i></div><div class="stat-label">EXP total</div></div><div class="stat-val" id="stat-exp">+0</div><div class="stat-foot" id="stat-exp-rate">~0 EXP/h</div></div>
+          <div class="stat glow"><div class="stat-top"><div class="stat-icon"><i class="fa-solid fa-clock"></i></div><div class="stat-label">Tempo ativo</div></div><div class="stat-val" id="stat-uptime">00:00:00</div><div class="stat-foot">Painel em execução</div></div>
         </div>
         <div class="dist glow">
-          <h3>Account distribution</h3>
+          <h3>Distribuição das contas</h3>
           <div class="bar" id="distBar"></div>
           <div class="legend">
-            <span><em class="c-match"></em>Match<b id="d-match">0</b></span>
-            <span><em class="c-online"></em>Online<b id="d-online">0</b></span>
-            <span><em class="c-paused"></em>Paused<b id="d-paused">0</b></span>
-            <span><em class="c-error"></em>Error<b id="d-error">0</b></span>
+            <span><em class="c-match"></em>Em partida<b id="d-match">0</b></span>
+            <span><em class="c-online"></em>Conectadas<b id="d-online">0</b></span>
+            <span><em class="c-paused"></em>Pausadas<b id="d-paused">0</b></span>
+            <span><em class="c-error"></em>Com erro<b id="d-error">0</b></span>
           </div>
         </div>
       </section>
 
       <section id="page-targets" class="page">
         <div class="page-head">
-          <div><h1 class="page-title">Accounts</h1><p class="page-sub">Manage connected accounts</p></div>
+          <div><h1 class="page-title">Contas</h1><p class="page-sub">Gerencie as contas conectadas.</p></div>
           <div class="row">
-            <button class="btn" id="btnPauseAll"><i class="fa-solid fa-pause"></i><span>Pause All</span></button>
-            <button class="btn ok" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Create Team</button>
-            <button class="btn primary" id="btnAdd"><i class="fa-solid fa-plus"></i>Add Account</button>
+            <button class="btn" id="btnPauseAll"><i class="fa-solid fa-pause"></i><span>Pausar todas</span></button>
+            <button class="btn ok" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Criar equipe</button>
+            <button class="btn primary" id="btnAdd"><i class="fa-solid fa-plus"></i>Adicionar conta</button>
           </div>
         </div>
         <div class="controls">
-          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="accountSearch" type="search" placeholder="Search nickname or UID..." autocomplete="off"></div>
+          <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="accountSearch" type="search" placeholder="Buscar apelido ou UID..." autocomplete="off"></div>
           <div class="seg" id="nodeFilters">
-            <button class="active" data-f="all">All<em class="n" id="f-all">0</em></button>
-            <button data-f="in_match">Match<em class="n" id="f-in_match">0</em></button>
-            <button data-f="online">Online<em class="n" id="f-online">0</em></button>
-            <button data-f="paused">Paused<em class="n" id="f-paused">0</em></button>
+            <button class="active" data-f="all">Todas<em class="n" id="f-all">0</em></button>
+            <button data-f="in_match">Em partida<em class="n" id="f-in_match">0</em></button>
+            <button data-f="online">Conectadas<em class="n" id="f-online">0</em></button>
+            <button data-f="paused">Pausadas<em class="n" id="f-paused">0</em></button>
           </div>
         </div>
-        <div class="grid" id="accounts"><div class="empty" id="connecting"><i class="fa-solid fa-circle-notch fa-spin big"></i>Connecting to backend...</div></div>
-        <div class="empty" id="noMatch" hidden><i class="fa-solid fa-filter-circle-xmark big"></i>No matching accounts.</div>
+        <div class="grid" id="accounts"><div class="empty" id="connecting"><i class="fa-solid fa-circle-notch fa-spin big"></i>Conectando ao servidor...</div></div>
+        <div class="empty" id="noMatch" hidden><i class="fa-solid fa-filter-circle-xmark big"></i>Nenhuma conta encontrada.</div>
+      </section>
+
+      <section id="page-guild" class="page">
+        <div class="page-head">
+          <div><h1 class="page-title">Status da guilda</h1><p class="page-sub">Consulte os dados da guilda pelo painel de gerenciamento.</p></div>
+        </div>
+        <div class="glow stat">
+          <form id="guildForm" class="row" novalidate>
+            <div class="field" style="flex:2;min-width:190px;margin:0"><label for="guildId">ID da guilda</label><input id="guildId" type="text" inputmode="numeric" pattern="[0-9]+" value="2055589692" placeholder="Digite o ID da guilda" required></div>
+            <div class="field" style="flex:1;min-width:150px;margin:0"><label for="guildRegion">Região</label><select id="guildRegion"><option value="BR">BR — Brasil</option><option value="SAC">SAC — América do Sul</option><option value="NA">NA — América do Norte</option><option value="US">US — Estados Unidos</option><option value="IND">IND — Índia</option><option value="BD">BD — Bangladesh</option><option value="ID">ID — Indonésia</option><option value="ME">ME — Oriente Médio</option><option value="PK">PK — Paquistão</option><option value="VN">VN — Vietnã</option><option value="TH">TH — Tailândia</option><option value="TW">TW — Taiwan</option><option value="RU">RU — Rússia</option><option value="SG">SG — Singapura</option></select></div>
+            <div class="field" style="display:flex;align-items:flex-end;margin:0"><button class="btn primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i>Consultar status</button></div>
+          </form>
+        </div>
+        <p class="guild-note" id="guildMessage" aria-live="polite">Informe o ID e a região para carregar o status da guilda.</p>
+        <div id="guildResults" hidden>
+          <div class="glow guild-overview" id="guildOverview"></div>
+          <div class="guild-details">
+            <section class="glow guild-panel" id="guildInfo"></section>
+            <section class="glow guild-panel" id="guildLeader"></section>
+            <section class="glow guild-panel" id="guildOfficers"></section>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px"><a class="btn" id="guildExternal" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-solid fa-arrow-up-right-from-square"></i>Abrir painel em nova aba</a></div>
       </section>
 
       <section id="page-terminal" class="page">
         <div class="page-head">
-          <div><h1 class="page-title">Live Console</h1><p class="page-sub">Live backend execution logs</p></div>
+          <div><h1 class="page-title">Console ao vivo</h1><p class="page-sub">Registros de execução do servidor em tempo real.</p></div>
           <div class="row">
-            <button class="btn on" id="btnAutoscroll"><i class="fa-solid fa-arrow-down"></i>Auto-scroll</button>
-            <button class="btn" id="btnClearLogs"><i class="fa-solid fa-trash"></i>Clear logs</button>
+            <button class="btn on" id="btnAutoscroll"><i class="fa-solid fa-arrow-down"></i>Rolagem automática</button>
+            <button class="btn" id="btnClearLogs"><i class="fa-solid fa-trash"></i>Limpar registros</button>
           </div>
         </div>
         <div class="controls"><div class="seg" id="logFilters">
-          <button class="active" data-f="all">All</button><button data-f="match">Match</button><button data-f="success">EXP</button><button data-f="error">Errors</button>
+          <button class="active" data-f="all">Todos</button><button data-f="match">Partidas</button><button data-f="success">EXP</button><button data-f="error">Erros</button>
         </div></div>
         <div class="term">
-          <div class="term-head"><span class="dots"><i></i><i></i><i></i></span><span>PRN CODEX@backend:~#</span><span class="cnt" id="logCount">0</span></div>
+          <div class="term-head"><span class="dots"><i></i><i></i><i></i></span><span>Lady Glory@servidor:~#</span><span class="cnt" id="logCount">0</span></div>
           <div class="term-body" id="console"></div>
         </div>
       </section>
@@ -256,51 +294,52 @@ button{cursor:pointer;background:none;border:0}
 </div>
 
 <nav class="tabbar" id="tabbar">
-  <button class="tab active" data-page="core" data-title="Command Core"><i class="fa-solid fa-gauge-high"></i>Core</button>
-  <button class="tab" data-page="targets" data-title="Accounts"><i class="fa-solid fa-network-wired"></i>Accounts</button>
-  <button class="tab" data-page="terminal" data-title="Live Console"><i class="fa-solid fa-terminal"></i>Console</button>
-  <button class="tab team" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Team</button>
+  <button class="tab active" data-page="core" data-title="Visão geral"><i class="fa-solid fa-gauge-high"></i>Início</button>
+  <button class="tab" data-page="targets" data-title="Contas"><i class="fa-solid fa-network-wired"></i>Contas</button>
+  <button class="tab" data-page="guild" data-title="Guilda"><i class="fa-solid fa-shield-halved"></i>Guilda</button>
+  <button class="tab" data-page="terminal" data-title="Console ao vivo"><i class="fa-solid fa-terminal"></i>Console</button>
+  <button class="tab team" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Equipe</button>
 </nav>
 
 <div class="modal" id="addModal" aria-hidden="true">
   <div class="sheet">
-    <h2>Add account</h2>
+    <h2>Adicionar conta</h2>
     <form id="addForm" novalidate>
-      <p class="lead">Enter credentials to start a new account on the server.</p>
-      <div class="field"><label for="accType">Login type</label><select id="accType"><option value="guest">Guest (UID + Password)</option><option value="token">Access Token</option></select></div>
+      <p class="lead">Informe as credenciais para iniciar uma nova conta no servidor.</p>
+      <div class="field"><label for="accType">Tipo de acesso</label><select id="accType"><option value="guest">Convidado (UID + senha)</option><option value="token">Token de acesso</option></select></div>
       <div id="guestInputs">
-        <div class="field"><label for="accUid">Guest UID</label><input type="text" id="accUid" inputmode="numeric" placeholder="Enter UID" autocomplete="off"></div>
-        <div class="field"><label for="accPass">Password / Key</label><input type="password" id="accPass" placeholder="••••••••" autocomplete="new-password"></div>
+        <div class="field"><label for="accUid">UID</label><input type="text" id="accUid" inputmode="numeric" placeholder="Digite o UID" autocomplete="off"></div>
+        <div class="field"><label for="accPass">Senha / chave</label><input type="password" id="accPass" placeholder="••••••••" autocomplete="new-password"></div>
       </div>
-      <div id="tokenInputs" hidden><div class="field"><label for="accToken">Access token</label><textarea id="accToken" placeholder="Paste the full token here..." spellcheck="false"></textarea></div></div>
-      <div class="card-actions"><button type="button" class="btn" data-close="addModal">Cancel</button><button type="submit" class="btn primary" id="addSubmit"><i class="fa-solid fa-rocket"></i>Save &amp; Start</button></div>
+      <div id="tokenInputs" hidden><div class="field"><label for="accToken">Token de acesso</label><textarea id="accToken" placeholder="Cole o token completo aqui..." spellcheck="false"></textarea></div></div>
+      <div class="card-actions"><button type="button" class="btn" data-close="addModal">Cancelar</button><button type="submit" class="btn primary" id="addSubmit"><i class="fa-solid fa-rocket"></i>Salvar e iniciar</button></div>
     </form>
   </div>
 </div>
 
 <div class="modal" id="teamModal" aria-hidden="true">
   <div class="sheet">
-    <h2>Create team</h2>
+    <h2>Criar equipe</h2>
     <form id="teamForm" novalidate>
-      <p class="lead">New guest accounts are created, join the clan, and start Team Match together.</p>
+      <p class="lead">Novas contas convidadas são criadas, entram na guilda e iniciam uma partida em equipe.</p>
       <div class="two">
-        <div class="field"><label for="teamRegion">Region</label><select id="teamRegion">
-          <option value="BD">BD — Bangladesh</option><option value="IND">IND — India</option><option value="ID">ID — Indonesia</option><option value="ME">ME — Middle East</option><option value="PK">PK — Pakistan</option><option value="VN">VN — Vietnam</option><option value="TH">TH — Thailand</option><option value="TW">TW — Taiwan</option><option value="RU">RU — Russia</option><option value="SAC">SAC — South America</option><option value="BR">BR — Brazil</option><option value="NA">NA — North America</option><option value="SG">SG — Singapore</option><option value="US">US — United States</option></select></div>
-        <div class="field"><label for="teamClan">Clan ID</label><input id="teamClan" type="text" inputmode="numeric" value="3105458988"></div>
+        <div class="field"><label for="teamRegion">Região</label><select id="teamRegion">
+          <option value="BD">BD — Bangladesh</option><option value="IND">IND — Índia</option><option value="ID">ID — Indonésia</option><option value="ME">ME — Oriente Médio</option><option value="PK">PK — Paquistão</option><option value="VN">VN — Vietnã</option><option value="TH">TH — Tailândia</option><option value="TW">TW — Taiwan</option><option value="RU">RU — Rússia</option><option value="SAC">SAC — América do Sul</option><option value="BR">BR — Brasil</option><option value="NA">NA — América do Norte</option><option value="SG">SG — Singapura</option><option value="US">US — Estados Unidos</option></select></div>
+        <div class="field"><label for="teamClan">ID da guilda</label><input id="teamClan" type="text" inputmode="numeric" value="3105458988"></div>
       </div>
       <div class="two">
-        <div class="field"><label for="teamCount">Bots</label><select id="teamCount"><option value="4" selected>4 bots (full team)</option><option value="3">3 bots</option><option value="2">2 bots</option></select></div>
-        <div class="field"><label for="teamPass">Password</label><input id="teamPass" type="text" value="PRN CODEX"></div>
+        <div class="field"><label for="teamCount">Contas</label><select id="teamCount"><option value="4" selected>4 contas (equipe completa)</option><option value="3">3 contas</option><option value="2">2 contas</option></select></div>
+        <div class="field"><label for="teamPass">Senha</label><input id="teamPass" type="text" value="PRN CODEX"></div>
       </div>
-      <div class="card-actions"><button type="button" class="btn" data-close="teamModal">Cancel</button><button type="submit" class="btn ok" id="teamSubmit"><i class="fa-solid fa-bolt"></i>Create &amp; Start</button></div>
+      <div class="card-actions"><button type="button" class="btn" data-close="teamModal">Cancelar</button><button type="submit" class="btn ok" id="teamSubmit"><i class="fa-solid fa-bolt"></i>Criar e iniciar</button></div>
     </form>
   </div>
 </div>
 
 <div class="modal" id="confirmModal" aria-hidden="true">
   <div class="sheet">
-    <h2>Confirm</h2><p class="lead" id="confirmMsg" style="margin:0"></p>
-    <div class="card-actions"><button type="button" class="btn" id="confirmNo">Cancel</button><button type="button" class="btn danger" id="confirmYes"><i class="fa-solid fa-trash"></i>Confirm</button></div>
+    <h2>Confirmar</h2><p class="lead" id="confirmMsg" style="margin:0"></p>
+    <div class="card-actions"><button type="button" class="btn" id="confirmNo">Cancelar</button><button type="button" class="btn danger" id="confirmYes"><i class="fa-solid fa-trash"></i>Confirmar</button></div>
   </div>
 </div>
 <div class="toasts" id="toastBox" aria-live="polite"></div>
@@ -312,6 +351,7 @@ const $ = id => document.getElementById(id);
 const esc = s => s == null ? "" : String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 const state = {accounts:[], logs:[], online:true, loaded:false, last:null, serverUptime:null, upAt:Date.now()};
 let activeFilter = "all", activeLogFilter = "all", autoScroll = true, started = false, rendering = false, confirmRes = null;
+let inflight = false;
 const clientStart = Date.now();
 
 /* ---------- PREMIUM COLOR CYCLE ---------- */
@@ -335,7 +375,7 @@ function applyPalette(){
   paletteIdx = (paletteIdx + 1) % PALETTES.length;
 }
 applyPalette();
-setInterval(applyPalette, 1000);
+setInterval(applyPalette, 7000);
 
 /* ---------- toast / modal ---------- */
 function toast(msg, type = "info"){
@@ -362,7 +402,7 @@ $("confirmNo").addEventListener("click", () => closeModal("confirmModal"));
 $("confirmYes").addEventListener("click", () => { if(confirmRes){ const r = confirmRes; confirmRes = null; r(true); } closeModal("confirmModal"); });
 
 /* ---------- navigation ---------- */
-const PAGES = ["core","targets","terminal"];
+const PAGES = ["core","targets","guild","terminal"];
 function go(page){
   if(!PAGES.includes(page)) page = "core";
   document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === "page-" + page));
@@ -372,9 +412,93 @@ function go(page){
   });
   try{ history.replaceState(null, "", "#" + page); }catch(e){}
   $("content").scrollTop = 0;
+  if(page === "guild" && !guildLoaded) loadGuildStatus();
   if(page === "terminal") requestAnimationFrame(() => { if(autoScroll) scrollLogsToEnd(); });
 }
 document.querySelectorAll("[data-page]").forEach(b => b.addEventListener("click", () => go(b.dataset.page)));
+
+/* ---------- guild status ---------- */
+const GUILD_STATUS_URL = "https://danger-guild-management-web.vercel.app/guild";
+const guildIdField = $("guildId"), guildRegionField = $("guildRegion");
+let guildLoaded = false;
+try{
+  const savedGuild = JSON.parse(localStorage.getItem("lady-glory-guild") || "null");
+  if(savedGuild && /^\d+$/.test(String(savedGuild.id || ""))) guildIdField.value = savedGuild.id;
+  if(savedGuild && [...guildRegionField.options].some(option => option.value === savedGuild.region)) guildRegionField.value = savedGuild.region;
+}catch(e){ console.warn("Não foi possível carregar as preferências da guilda.", e); }
+function loadGuildStatus(){
+  const guildId = guildIdField.value.trim();
+  const region = guildRegionField.value;
+  if(!/^\d+$/.test(guildId)){
+    $("guildMessage").textContent = "Informe um ID de guilda numérico válido para consultar o status.";
+    return false;
+  }
+  const url = new URL(GUILD_STATUS_URL);
+  url.searchParams.set("guild_id", guildId);
+  url.searchParams.set("region", region);
+  $("guildExternal").href = url.toString();
+  $("guildExternal").hidden = false;
+  $("guildMessage").textContent = "Consultando os dados da guilda...";
+  $("guildResults").hidden = true;
+  try{ localStorage.setItem("lady-glory-guild", JSON.stringify({id:guildId, region})); }
+  catch(e){ console.warn("Não foi possível salvar as preferências da guilda.", e); }
+  fetch(url.toString(), {cache:"no-store"}).then(response => {
+    if(!response.ok) throw new Error("HTTP " + response.status);
+    return response.json();
+  }).then(data => {
+    if(data.status && data.status !== "success") throw new Error(data.message || data.error || "A consulta da guilda não foi concluída.");
+    renderGuildStatus(data);
+    $("guildMessage").textContent = `Dados atualizados para a região ${region}.`;
+    guildLoaded = true;
+  }).catch(error => {
+    console.warn("Falha ao consultar o status da guilda:", error);
+    $("guildMessage").textContent = "Não foi possível carregar os dados da guilda. Tente novamente ou abra o painel externo.";
+    toast("Falha ao consultar a guilda. Verifique a conexão e tente novamente.", "error");
+  });
+  return true;
+}
+const guildText = value => value == null || value === "" ? "Não informado" : String(value);
+function guildStat(label, value){
+  return `<div class="guild-stat"><span>${esc(label)}</span><strong>${esc(guildText(value))}</strong></div>`;
+}
+function renderGuildStatus(data){
+  const leader = data.GuildLeader || {};
+  const officers = Array.isArray(data.Officers) ? data.Officers : [];
+  const currentMembers = Number(data.CurrentMembers);
+  const maxMembers = Number(data.MaxMembers);
+  const memberCount = Number.isFinite(currentMembers) && Number.isFinite(maxMembers)
+    ? `${currentMembers} / ${maxMembers}` : guildText(data.CurrentMembers);
+  $("guildOverview").innerHTML = [
+    guildStat("Guilda", data.GuildName),
+    guildStat("Nível", data.GuildLevel),
+    guildStat("Membros", memberCount),
+    guildStat("Região", data.GuildRegion || guildRegionField.value),
+    guildStat("Pontos de atividade", Number(data.TotalActivityPoints || 0).toLocaleString("pt-BR")),
+    guildStat("Atividade semanal", Number(data.WeeklyActivityPoints || 0).toLocaleString("pt-BR"))
+  ].join("");
+  $("guildInfo").innerHTML = `<h2><i class="fa-solid fa-circle-info"></i> Informações</h2>
+    <p><b>ID:</b> ${esc(guildText(data.GuildId))}</p>
+    <p><b>Descrição:</b> ${esc(guildText(data.GuildSlogan))}</p>
+    <p><b>Quadro:</b> ${esc(guildText(data.FrameName))}</p>
+    <p><b>Entrada automática:</b> ${esc(guildText(data.AutoApprovalStatus))}</p>
+    <p><b>Atualizado em:</b> ${esc(guildText(data.last_updated))}</p>`;
+  $("guildLeader").innerHTML = `<h2><i class="fa-solid fa-crown"></i> Líder</h2>
+    <p><b>Nome:</b> ${esc(guildText(leader.Name))}</p>
+    <p><b>UID:</b> ${esc(guildText(leader.Uid))}</p>
+    <p><b>Nível:</b> ${esc(guildText(leader.Level))}</p>
+    <p><b>Rank CS:</b> ${esc(guildText(leader.CsRank))}${leader.CsStars == null ? "" : ` (${esc(leader.CsStars)} estrelas)`}</p>
+    <p><b>Rank BR:</b> ${esc(guildText(leader.BrRank))}</p>`;
+  $("guildOfficers").innerHTML = `<h2><i class="fa-solid fa-user-shield"></i> Oficiais (${officers.length})</h2>
+    ${officers.length ? `<div class="guild-members">${officers.map(officer => `<div class="guild-member"><b>${esc(guildText(officer.Name))}</b><span>UID ${esc(guildText(officer.Uid))}</span></div>`).join("")}</div>` : '<p>Nenhum oficial informado.</p>'}`;
+  $("guildResults").hidden = false;
+}
+$("guildForm").addEventListener("submit", e => {
+  e.preventDefault();
+  if(!loadGuildStatus()){
+    toast("Informe um ID de guilda numérico válido.", "error");
+    guildIdField.focus();
+  }
+});
 
 /* ---------- init ---------- */
 function init(){
@@ -403,20 +527,20 @@ $("addForm").addEventListener("submit", e => {
   let payload;
   if($("accType").value === "guest"){
     const uid = $("accUid").value.trim(), password = $("accPass").value.trim();
-    if(!uid || !password) return toast("UID and password required", "error");
+    if(!uid || !password) return toast("UID e senha são obrigatórios.", "error");
     payload = {uid, password};
   } else {
     const token = $("accToken").value.trim();
-    if(!token) return toast("Access token required", "error");
+    if(!token) return toast("O token de acesso é obrigatório.", "error");
     payload = {token};
   }
   guard("add", async () => {
     $("addSubmit").disabled = true;
     try{
       const d = await post("/api/account/add", payload);
-      if(d.status === "ok"){ closeModal("addModal"); $("addForm").reset(); toggleFormType(); toast("Account added successfully", "success"); fetchStats(); }
-      else toast(d.error || "Failed to add account", "error");
-    }catch(err){ toast("Backend connection failed", "error"); }
+      if(d.status === "ok"){ closeModal("addModal"); $("addForm").reset(); toggleFormType(); toast("Conta adicionada com sucesso.", "success"); fetchStats(); }
+      else toast(d.error || "Não foi possível adicionar a conta.", "error");
+    }catch(err){ toast("Falha na conexão com o servidor.", "error"); }
     finally{ $("addSubmit").disabled = false; }
   });
 });
@@ -425,47 +549,47 @@ $("addForm").addEventListener("submit", e => {
 $("teamForm").addEventListener("submit", e => {
   e.preventDefault();
   const region = $("teamRegion").value, clan_id = $("teamClan").value.trim(), count = parseInt($("teamCount").value, 10), password = $("teamPass").value.trim() || "PRN CODEX";
-  if(!clan_id) return toast("Clan ID is required", "error");
+  if(!clan_id) return toast("O ID da guilda é obrigatório.", "error");
   guard("team", async () => {
-    const b = $("teamSubmit"); b.disabled = true; b.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i>Starting...';
+    const b = $("teamSubmit"); b.disabled = true; b.innerHTML = '<i class="fa-solid fa-circle-notch spin"></i>Iniciando...';
     try{
       const d = await post("/api/create_team", {region, clan_id, count, password});
       if(d.ok){
         closeModal("teamModal");
-        toast(`Creating ${count} bots in ${region}... running in background`, "success");
+        toast(`Criando ${count} contas em ${region}... o processo continuará em segundo plano.`, "success");
         [3000, 8000, 15000].forEach(ms => setTimeout(fetchStats, ms));
-      } else toast(d.error || "Failed to create team", "error");
-    }catch(err){ toast("Backend connection failed", "error"); }
-    finally{ b.disabled = false; b.innerHTML = '<i class="fa-solid fa-bolt"></i>Create &amp; Start'; }
+      } else toast(d.error || "Não foi possível criar a equipe.", "error");
+    }catch(err){ toast("Falha na conexão com o servidor.", "error"); }
+    finally{ b.disabled = false; b.innerHTML = '<i class="fa-solid fa-bolt"></i>Criar e iniciar'; }
   });
 });
 
 /* account actions */
 async function deleteAccount(uid, authUid){
-  if(!await confirmDialog(`Remove account ${uid}? This cannot be undone.`)) return;
+  if(!await confirmDialog(`Remover a conta ${uid}? Esta ação não pode ser desfeita.`)) return;
   guard("del" + uid, async () => {
     try{
       const d = await post("/api/account/delete", {uid, auth_uid: authUid || ""});
-      if(d.status === "ok"){ toast("Account removed", "success"); const c = $("acc-" + uid); if(c) c.remove(); fetchStats(); }
-      else toast(d.error || "Delete failed", "error");
-    }catch(e){ toast("Backend connection failed", "error"); }
+      if(d.status === "ok"){ toast("Conta removida.", "success"); const c = $("acc-" + uid); if(c) c.remove(); fetchStats(); }
+      else toast(d.error || "Não foi possível remover a conta.", "error");
+    }catch(e){ toast("Falha na conexão com o servidor.", "error"); }
   });
 }
-const refreshAcc = uid => guard("ref" + uid, async () => { try{ toast(`Refreshing ${uid}...`); const d = await post("/api/account/refresh", {uid}); if(d.error) toast(d.error, "error"); setTimeout(fetchStats, 800); }catch(e){ toast("Refresh failed", "error"); } });
-const restartAcc = uid => guard("rst" + uid, async () => { try{ toast(`Restarting ${uid}...`); const d = await post("/api/account/restart", {uid}); if(d.error) toast(d.error, "error"); setTimeout(fetchStats, 800); }catch(e){ toast("Restart failed", "error"); } });
+const refreshAcc = uid => guard("ref" + uid, async () => { try{ toast(`Atualizando ${uid}...`); const d = await post("/api/account/refresh", {uid}); if(d.error) toast(d.error, "error"); setTimeout(fetchStats, 800); }catch(e){ toast("Falha ao atualizar.", "error"); } });
+const restartAcc = uid => guard("rst" + uid, async () => { try{ toast(`Reiniciando ${uid}...`); const d = await post("/api/account/restart", {uid}); if(d.error) toast(d.error, "error"); setTimeout(fetchStats, 800); }catch(e){ toast("Falha ao reiniciar.", "error"); } });
 const togglePause = uid => guard("pau" + uid, async () => {
   try{
     const d = await post("/api/account/pause", {uid});
-    if(d.status === "ok"){ toast(d.is_paused ? `Paused ${uid}` : `Resumed ${uid}`, d.is_paused ? "info" : "success"); fetchStats(); }
-    else toast(d.error || "Pause failed", "error");
-  }catch(e){ toast("Backend connection failed", "error"); }
+    if(d.status === "ok"){ toast(d.is_paused ? `Conta ${uid} pausada.` : `Conta ${uid} retomada.`, d.is_paused ? "info" : "success"); fetchStats(); }
+    else toast(d.error || "Falha ao alterar a pausa.", "error");
+  }catch(e){ toast("Falha na conexão com o servidor.", "error"); }
 });
 $("btnPauseAll").addEventListener("click", () => guard("pauseAll", async () => {
   try{
     const d = await post("/api/account/pause_all");
-    if(d.status === "ok"){ toast(d.all_paused ? "All accounts paused" : "All accounts resumed", d.all_paused ? "info" : "success"); fetchStats(); }
-    else toast(d.error || "Failed", "error");
-  }catch(e){ toast("Backend connection failed", "error"); }
+    if(d.status === "ok"){ toast(d.all_paused ? "Todas as contas foram pausadas." : "Todas as contas foram retomadas.", d.all_paused ? "info" : "success"); fetchStats(); }
+    else toast(d.error || "Não foi possível concluir a ação.", "error");
+  }catch(e){ toast("Falha na conexão com o servidor.", "error"); }
 }));
 
 /* ---------- accounts render ---------- */
@@ -478,7 +602,7 @@ function nodeCategory(a){
 function fmtDur(sec){
   sec = Math.max(0, Math.floor(Number(sec) || 0));
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60, p = n => String(n).padStart(2,"0");
-  return h > 0 ? `${h}h ${p(m)}m` : `${p(m)}m ${p(s)}s`;
+  return h > 0 ? `${h}h ${p(m)}min` : `${p(m)}min ${p(s)}s`;
 }
 function nodeHTML(acc, uid, c){
   const i = CAT[c.cat];
@@ -494,27 +618,27 @@ function nodeHTML(acc, uid, c){
     <span class="badge ${i.cls}"><i class="fa-solid ${i.icon}"></i>${esc(c.stText)}</span>
   </div>
   <div class="metrics">
-    <div class="metric"><span>Initial</span><strong>${Number(acc.initial_exp || 0).toLocaleString()}</strong></div>
-    <div class="metric"><span>Current</span><strong>${c.curExp.toLocaleString()}</strong></div>
-    <div class="metric gain"><span>Gained</span><strong>+${Number(acc.gained_exp || 0).toLocaleString()}</strong></div>
+    <div class="metric"><span>Inicial</span><strong>${Number(acc.initial_exp || 0).toLocaleString("pt-BR")}</strong></div>
+    <div class="metric"><span>Atual</span><strong>${c.curExp.toLocaleString("pt-BR")}</strong></div>
+    <div class="metric gain"><span>Obtida</span><strong>+${Number(acc.gained_exp || 0).toLocaleString("pt-BR")}</strong></div>
   </div>
   <div>
-    <div class="prog-top"><span>Lv ${c.level}</span><span>${c.isMax ? "Max level" : c.remaining.toLocaleString() + " EXP left"}</span><span>Lv ${c.nextLvl}</span></div>
+    <div class="prog-top"><span>Nv. ${c.level}</span><span>${c.isMax ? "Nível máximo" : c.remaining.toLocaleString("pt-BR") + " EXP restantes"}</span><span>Nv. ${c.nextLvl}</span></div>
     <div class="track"><div class="fill" style="width:${c.pct.toFixed(1)}%"></div></div>
-    <div class="prog-bot"><span>${c.earned.toLocaleString()} / ${c.needed.toLocaleString()}</span><span class="pct">${c.pct.toFixed(1)}%</span></div>
+    <div class="prog-bot"><span>${c.earned.toLocaleString("pt-BR")} / ${c.needed.toLocaleString("pt-BR")}</span><span class="pct">${c.pct.toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})}%</span></div>
   </div>
   <div class="node-foot">
-    <span class="time"><i class="fa-solid fa-stopwatch"></i><b class="acc-time">00m 00s</b></span>
+    <span class="time"><i class="fa-solid fa-stopwatch"></i><b class="acc-time">00min 00s</b></span>
     <div class="acts">
-      <button class="act" data-act="pause" title="${c.cat === "paused" ? "Resume" : "Pause"}" aria-label="${c.cat === "paused" ? "Resume" : "Pause"}"><i class="fa-solid ${c.cat === "paused" ? "fa-play" : "fa-pause"}"></i></button>
-      <button class="act" data-act="restart" title="Restart" aria-label="Restart"><i class="fa-solid fa-rotate-right"></i></button>
-      <button class="act" data-act="sync" title="Refresh" aria-label="Refresh"><i class="fa-solid fa-arrows-rotate"></i></button>
-      <button class="act danger" data-act="delete" title="Delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+      <button class="act" data-act="pause" title="${c.cat === "paused" ? "Retomar" : "Pausar"}" aria-label="${c.cat === "paused" ? "Retomar" : "Pausar"}"><i class="fa-solid ${c.cat === "paused" ? "fa-play" : "fa-pause"}"></i></button>
+      <button class="act" data-act="restart" title="Reiniciar" aria-label="Reiniciar"><i class="fa-solid fa-rotate-right"></i></button>
+      <button class="act" data-act="sync" title="Atualizar" aria-label="Atualizar"><i class="fa-solid fa-arrows-rotate"></i></button>
+      <button class="act danger" data-act="delete" title="Excluir" aria-label="Excluir"><i class="fa-solid fa-trash"></i></button>
     </div>
   </div>`;
 }
 function emptyHTML(){
-  return `<i class="fa-solid fa-ghost big"></i>No accounts yet.<br><button class="btn ok" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Create Team</button><button class="btn primary" data-act="add"><i class="fa-solid fa-plus"></i>Add Account</button>`;
+  return `<i class="fa-solid fa-ghost big"></i>Nenhuma conta adicionada ainda.<br><button class="btn ok" data-open="teamModal"><i class="fa-solid fa-users-gear"></i>Criar equipe</button><button class="btn primary" data-act="add"><i class="fa-solid fa-plus"></i>Adicionar conta</button>`;
 }
 function renderDist(cats){
   const n = {match:0, online:0, paused:0, error:0};
@@ -525,7 +649,7 @@ function renderDist(cats){
 function renderAccounts(accounts, force){
   const box = $("accounts"), cats = accounts.map(nodeCategory);
   $("btnPauseAll").innerHTML = accounts.length && cats.every(c => c === "paused")
-    ? '<i class="fa-solid fa-play"></i><span>Resume All</span>' : '<i class="fa-solid fa-pause"></i><span>Pause All</span>';
+    ? '<i class="fa-solid fa-play"></i><span>Retomar todas</span>' : '<i class="fa-solid fa-pause"></i><span>Pausar todas</span>';
   const n = {all:accounts.length, in_match:0, online:0, paused:0};
   cats.forEach(c => { if(c === "match"){ n.in_match++; n.online++; } else if(c === "online" || c === "search") n.online++; else if(c === "paused") n.paused++; });
   Object.keys(n).forEach(k => $("f-" + k).textContent = n[k]);
@@ -546,7 +670,7 @@ function renderAccounts(accounts, force){
     const needed = Math.max(1, target - baseExp), curExp = Number(acc.current_exp || 0);
     const earned = Math.max(0, curExp - baseExp), remaining = Math.max(0, target - curExp);
     const pct = isMax ? 100 : Math.min(100, Math.max(0, earned / needed * 100));
-    const stText = cat === "paused" ? "PAUSED" : cat === "match" ? `IN MATCH (${acc.active_matches || 1})` : cat === "error" ? (acc.status || "ERROR") : (acc.status || "ONLINE");
+    const stText = cat === "paused" ? "PAUSADA" : cat === "match" ? `EM PARTIDA (${acc.active_matches || 1})` : cat === "search" ? "BUSCANDO PARTIDA" : cat === "error" ? "ERRO" : "CONECTADA";
     const c = {level, nextLvl, isMax, curExp, earned, needed, remaining, pct, cat, stText};
     let card = $("acc-" + uid);
     if(!card){ card = document.createElement("div"); card.id = "acc-" + uid; card.className = "node glow"; }
@@ -599,7 +723,7 @@ function renderLogs(logs){
   const prev = s.scrollTop; rendering = true;
   s.innerHTML = list.length
     ? list.slice(-400).map(l => `<div class="log"><span class="log-ts">[${esc(l.time || "00:00:00")}]</span><span class="log-msg ${esc(l.level || "info")}">&gt; ${esc(l.message || "")}</span></div>`).join("")
-    : '<div class="term-empty">No logs yet.</div>';
+    : '<div class="term-empty">Nenhum registro por enquanto.</div>';
   if(autoScroll) scrollLogsToEnd(); else s.scrollTop = prev;
   requestAnimationFrame(() => requestAnimationFrame(() => { rendering = false; }));
 }
@@ -610,8 +734,8 @@ $("logFilters").addEventListener("click", e => {
   renderLogs(state.logs);
 });
 $("btnClearLogs").addEventListener("click", () => guard("clearLogs", async () => {
-  try{ const r = await fetch("/api/logs/clear", {method:"POST"}); if(!r.ok) throw 0; state.logs = []; renderLogs([]); toast("Console cleared", "success"); }
-  catch(e){ toast("Failed to clear logs", "error"); }
+  try{ const r = await fetch("/api/logs/clear", {method:"POST"}); if(!r.ok) throw 0; state.logs = []; renderLogs([]); toast("Registros limpos.", "success"); }
+  catch(e){ toast("Falha ao limpar os registros.", "error"); }
 }));
 $("btnAutoscroll").addEventListener("click", () => { autoScroll = !autoScroll; $("btnAutoscroll").classList.toggle("on", autoScroll); if(autoScroll) scrollLogsToEnd(); });
 $("console").addEventListener("scroll", () => {
@@ -624,8 +748,8 @@ $("console").addEventListener("scroll", () => {
 /* ---------- stats ---------- */
 function setStatus(on){
   state.online = on;
-  $("pillText").textContent = on ? "ONLINE" : "OFFLINE";
-  const s = $("sideStatus"); s.textContent = on ? "ONLINE" : "OFFLINE"; s.style.color = on ? "var(--ok)" : "var(--err)";
+  $("pillText").textContent = on ? "CONECTADO" : "DESCONECTADO";
+  const s = $("sideStatus"); s.textContent = on ? "CONECTADO" : "DESCONECTADO"; s.style.color = on ? "var(--ok)" : "var(--err)";
   $("pill").classList.toggle("off", !on);
 }
 const COUNT = new Set(["stat-accounts","stat-started","stat-completed","stat-exp"]), tw = {};
@@ -649,13 +773,12 @@ function renderOverview(d){
   setText("stat-started", d.total_matches_started || 0);
   setText("stat-completed", d.total_matches || 0);
   setText("stat-exp", "+" + Number(d.total_gained_exp || 0).toLocaleString());
-  setText("stat-active-matches", (d.total_active_matches || 0) + " Active");
-  setText("stat-online", accs.filter(a => !(a.is_paused || a.status === "PAUSED") && (a.status === "ONLINE" || a.status === "IN_MATCH")).length + " Online");
+  setText("stat-active-matches", (d.total_active_matches || 0) + " ativas");
+  setText("stat-online", accs.filter(a => !(a.is_paused || a.status === "PAUSED") && (a.status === "ONLINE" || a.status === "IN_MATCH")).length + " conectadas");
   const upH = Math.max(0.016, (Number(d.uptime) || 60) / 3600);
-  setText("stat-per-hour", "~" + Math.round((d.total_matches_started || 0) / upH) + " / hour");
-  setText("stat-exp-rate", "~" + Number(d.exp_per_hour || 0).toLocaleString() + " EXP/hr");
+  setText("stat-per-hour", "~" + Math.round((d.total_matches_started || 0) / upH) + " / hora");
+  setText("stat-exp-rate", "~" + Number(d.exp_per_hour || 0).toLocaleString("pt-BR") + " EXP/h");
 }
-let inflight = false;
 async function fetchStats(manual){
   if(inflight) return; inflight = true;
   const ic = $("syncIcon"); ic.classList.add("spin");
@@ -670,16 +793,16 @@ async function fetchStats(manual){
     renderAccounts(state.accounts, false); renderLogs(state.logs); renderOverview(d); setStatus(true);
   }catch(e){
     console.warn("Backend sync error:", e);
-    if(state.online || manual) toast("Backend connection failed", "error");
+    if(state.online || manual) toast("Falha na conexão com o servidor.", "error");
     setStatus(false);
-    const c = $("connecting"); if(c && !state.loaded) c.innerHTML = '<i class="fa-solid fa-plug-circle-xmark big"></i>Cannot reach backend API';
+    const c = $("connecting"); if(c && !state.loaded) c.innerHTML = '<i class="fa-solid fa-plug-circle-xmark big"></i>Não foi possível conectar ao servidor.';
   }finally{ inflight = false; setTimeout(() => ic.classList.remove("spin"), 400); }
 }
 $("syncBtn").addEventListener("click", () => fetchStats(true));
 
 /* ---------- utils ---------- */
 function copyText(txt){
-  const ok = () => toast("UID copied: " + txt, "success");
+  const ok = () => toast("UID copiado: " + txt, "success");
   const fb = () => { try{ const ta = document.createElement("textarea"); ta.value = txt; ta.style.cssText = "position:fixed;opacity:0"; document.body.appendChild(ta); ta.select(); const d = document.execCommand("copy"); ta.remove(); d ? ok() : toast("UID: " + txt); }catch(e){ toast("UID: " + txt); } };
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
 }
