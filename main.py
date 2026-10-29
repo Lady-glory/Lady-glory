@@ -82,7 +82,7 @@ TEAM_MODE = True
 TEAM_SIZE = 4
 TEAM_READY_DELAY = 5.0
 TEAM_INVITE_WAIT = 2.5
-CLAN_ID_DEFAULT = "3105712089"
+CLAN_ID_DEFAULT = "2055589692"
 DEV_UID = ""
 
 # ==================== ANTI-AFK MOVEMENT ====================
@@ -2683,7 +2683,7 @@ async def major_register(release_v, access_token, open_id, name, game_version,
     except Exception as e:
         print_error(f"MAJOR-REG {e}"); return None
 
-async def create_four_accounts(region: str, clan_id: str, count: int = 4, password: str = "PRNCODEX"):
+async def create_four_accounts(region: str, clan_id: str, count: int = 4, password: str = "MF"):
     bot_state.creating = True
     bot_state.create_progress = []
     def _prog(s):
@@ -2716,7 +2716,7 @@ async def create_four_accounts(region: str, clan_id: str, count: int = 4, passwo
                 platform = tok.get("platform", 4)
                 major_payload, login_payload = await get_payload(
                     access_token, open_id, platform, game_version, lang)
-                nickname_final = "PRNCODEX•" + "".join(
+                nickname_final = "MF•" + "".join(
                     random.choices(string.ascii_uppercase + string.digits, k=5))
                 mr = await major_register(release_v, access_token, open_id,
                                           nickname_final, game_version, login_url, lang)
@@ -2973,7 +2973,7 @@ async def api_create_team(request):
         region = str(body.get("region", "ID")).upper()
         clan_id = str(body.get("clan_id", "")).strip()
         count = int(body.get("count", 4))
-        password = str(body.get("password", "PRNCODEX")).strip() or "PRNCODEX"
+        password = str(body.get("password", "MF")).strip() or "MF"
         if not clan_id:
             return aiohttp.web.json_response({"ok": False, "error": "clan_id required"})
         if bot_state.creating:
