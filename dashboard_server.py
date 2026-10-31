@@ -1,37 +1,8 @@
 # -*- coding: utf-8 -*-
-# ╔══════════════════════════════════════════════════════════════════════╗
-# ║                                                                      ║
-# ║   ██████╗  ██████╗ ███╗   ██╗     ██████╗ ██████╗ ██████╗ ███████╗  ║
-# ║   ██╔══██╗██╔══██╗████╗  ██║    ██╔════╝██╔═══██╗██╔══██╗██╔════╝  ║
-# ║   ██████╔╝██████╔╝██╔██╗ ██║    ██║     ██║   ██║██║  ██║█████╗    ║
-# ║   ██╔═══╝ ██╔══██╗██║╚██╗██║    ██║     ██║   ██║██║  ██║██╔══╝    ║
-# ║   ██║     ██║  ██║██║ ╚████║    ╚██████╗╚██████╔╝██████╔╝███████╗  ║
-# ║   ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝     ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝  ║
-# ║                                                                      ║
-# ║                    ★  P R N   C O D E X  ★                           ║
-# ║                      P R E M I U M   E D I T I O N                   ║
-# ║                                                                      ║
-# ║                         OWNER: PRN CODEX                             ║
-# ║                         STATUS: ACTIVE                               ║
-# ║                                                                      ║
-# ╚══════════════════════════════════════════════════════════════════════╝
-#  ┌──────────────────────────────────────────────────────────────────┐
-#  │  Project      :  FreeFire Level Up Bot                           │
-#  │  Module       :  Web Dashboard & Real-Time EXP Tracker           │
-#  │  Author       :  PRN CODEX                                       │
-#  │  Server       :  aiohttp Embedded Async Web Server                │
-#  │  Language     :  Python                                          │
-#  └──────────────────────────────────────────────────────────────────┘
-#
-#  © PRN CODEX — All rights reserved.
-#
 """
-PRN CODEX — FreeFire Level Up Bot
-Professional Web Dashboard & Real-Time EXP Tracker.
-
+FreeFire Level Up Bot - Professional Web Dashboard & Real-Time EXP Tracker
 Embedded Async Web Server (aiohttp)
-Optimized for ultra-smooth operation, zero memory leaks, and dynamic
-multi-account control.
+Now with Guild Glory tracking via external API.
 """
 
 import asyncio
@@ -39,9 +10,16 @@ import json
 import os
 import time
 from typing import Dict, List, Any, Optional
-from aiohttp import web
+from aiohttp import web, ClientSession, ClientTimeout
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "index.html")
+
+# ==================== GUILD API CONFIG ====================
+GUILD_API_BASE = "https://star-guild-info.lovable.app/api/public/info"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GUILD_BASELINE_FILE = os.path.join(BASE_DIR, "guild_baselines.json")
+GUILD_STATE: Dict[str, Dict[str, Any]] = {}
+
 
 EXP_TABLE: Dict[int, int] = {
     1: 0, 2: 48, 3: 202, 4: 544, 5: 1012, 6: 1844, 7: 2792, 8: 3800,
@@ -83,6 +61,41 @@ def calculate_level_progress(level: int, current_exp: int) -> Dict[str, Any]:
         "remaining_exp": remaining_exp,
         "progress_pct": round(progress_pct, 1)
     }
+
+
+# ==================== GUILD BASELINE HELPERS ====================
+def _load_baselines() -> Dict[str, Any]:
+    if os.path.exists(GUILD_BASELINE_FILE):
+        try:
+            with open(GUILD_BASELINE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_baselines(data: Dict[str, Any]) -> None:
+    try:
+        with open(GUILD_BASELINE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[GUILD] baseline save error: {e}")
+
+
+async def fetch_guild_api(region: str, clan_id: str) -> Dict[str, Any]:
+    """Call the external guild info API."""
+    url = f"{GUILD_API_BASE}?clan_id={clan_id}&region={region.lower()}"
+    timeout = ClientTimeout(total=10)
+    try:
+        async with ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return {"status": "error", "error": f"HTTP {resp.status}"}
+                return await resp.json()
+    except asyncio.TimeoutError:
+        return {"status": "error", "error": "API timeout"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 # Global bot state shared between Main.py and Web Dashboard
@@ -155,7 +168,8 @@ class BotState:
             self.logs.pop(0)
 
     def register_account(self, uid: str, nickname: str, region: str, level: int, exp: int,
-                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None):
+                         likes: int = 0, token: Optional[str] = None, auth_uid: Optional[str] = None,
+                         clan_id: Optional[str] = None):
         uid_str = str(uid)
         auth_uid_str = str(auth_uid) if auth_uid else self.game_to_auth_id.get(uid_str, "")
         if auth_uid_str:
@@ -203,7 +217,8 @@ class BotState:
                 "is_paused": self.is_paused(uid_str),
                 "paused_at": time.time() if self.is_paused(uid_str) else None,
                 "total_pause_duration": 0.0,
-                "last_updated": time.strftime("%H:%M:%S")
+                "last_updated": time.strftime("%H:%M:%S"),
+                "clan_id": str(clan_id) if clan_id else ""
             }
         else:
             acc = self.accounts[uid_str]
@@ -217,6 +232,8 @@ class BotState:
                 acc["level"] = level
             if token:
                 acc["token"] = token
+            if clan_id:
+                acc["clan_id"] = str(clan_id)
             acc["current_exp"] = exp
             acc["gained_exp"] = max(0, exp - acc["initial_exp"])
             acc["next_level"] = prog["next_level"]
@@ -407,10 +424,10 @@ bot_state = BotState()
 # Fallback HTML if templates/index.html is missing
 FALLBACK_INDEX_HTML = """<!DOCTYPE html>
 <html>
-<head><title>PRN CODEX — Command Center</title></head>
-<body style="background:#0a0a12;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
-<h1>PRN CODEX</h1>
-<p>BOT RUNNING — templates/index.html is loading...</p>
+<head><title>Command Center</title></head>
+<body style="background:#050505;color:#fff;font-family:sans-serif;text-align:center;padding:50px;">
+<h1>BOT RUNNING</h1>
+<p>templates/index.html is loading...</p>
 </body>
 </html>"""
 
@@ -442,7 +459,6 @@ async def handle_get_stats(request: web.Request) -> web.Response:
         acc["is_paused"] = bot_state.is_paused(uid_k)
 
     return web.json_response({
-        "brand": "PRN CODEX",
         "total_accounts": len(bot_state.accounts),
         "total_matches": bot_state.total_matches,
         "total_matches_started": bot_state.total_matches_started,
@@ -726,12 +742,122 @@ async def handle_toggle_pause_all(request: web.Request) -> web.Response:
         return web.json_response({"status": "error", "error": str(e)})
 
 
+# ==================== GUILD INFO HANDLERS ====================
+
+async def handle_guild_info(request: web.Request) -> web.Response:
+    """
+    GET /api/guild/info?region=IND&clan_id=3054207827
+    Returns guild details + baseline/gained glory tracking.
+    """
+    try:
+        region = request.query.get("region", "").strip().upper()
+        clan_id = request.query.get("clan_id", "").strip()
+        if not region or not clan_id:
+            return web.json_response({"status": "error", "error": "region and clan_id required"}, status=400)
+
+        key = f"{region}:{clan_id}"
+        api_data = await fetch_guild_api(region, clan_id)
+        if api_data.get("status") != "success":
+            return web.json_response(
+                {"status": "error", "error": api_data.get("error", "API failed"), "raw": api_data},
+                status=502
+            )
+
+        current_glory = int(api_data.get("glory_points") or api_data.get("score") or 0)
+
+        baselines = _load_baselines()
+        if key not in baselines:
+            baselines[key] = {
+                "region": region,
+                "clan_id": clan_id,
+                "baseline_glory": current_glory,
+                "baseline_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            _save_baselines(baselines)
+            bot_state.log(f"📌 Guild baseline saved: {key} = {current_glory:,} glory", "info")
+
+        baseline_glory = int(baselines[key].get("baseline_glory", current_glory))
+        gained_glory = current_glory - baseline_glory
+
+        payload = {
+            "status": "success",
+            "region": region,
+            "clan_id": clan_id,
+            "guild_id": api_data.get("guild_id") or clan_id,
+            "guild_name": api_data.get("clan_name") or api_data.get("guild_name") or "Unknown Guild",
+            "guild_level": int(api_data.get("guild_level") or api_data.get("level") or 0),
+            "current_members": int(api_data.get("current_members") or 0),
+            "total_members": int(api_data.get("total_members") or 0),
+            "members_online": int(api_data.get("members_online") or 0),
+            "guild_bio": api_data.get("guild_bio") or "",
+            "guild_leader_id": api_data.get("guild_leader_id") or api_data.get("leader_id"),
+            "guild_rank": int(api_data.get("rank") or api_data.get("guild_position") or 0),
+            "guild_activity_points": int(api_data.get("guild_activity_points") or 0),
+            "xp": int(api_data.get("xp") or 0),
+            "current_glory": current_glory,
+            "baseline_glory": baseline_glory,
+            "gained_glory": gained_glory,
+            "baseline_at": baselines[key].get("baseline_at"),
+            "last_updated": time.strftime("%H:%M:%S"),
+        }
+
+        GUILD_STATE[key] = payload
+        return web.json_response(payload)
+    except Exception as e:
+        print(f"[GUILD ERROR] {e}")
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
+
+
+async def handle_guild_reset_baseline(request: web.Request) -> web.Response:
+    """POST /api/guild/reset  { region, clan_id } — resets baseline to current glory."""
+    try:
+        data = await request.json()
+        region = str(data.get("region", "")).strip().upper()
+        clan_id = str(data.get("clan_id", "")).strip()
+        if not region or not clan_id:
+            return web.json_response({"status": "error", "error": "region and clan_id required"}, status=400)
+
+        api_data = await fetch_guild_api(region, clan_id)
+        if api_data.get("status") != "success":
+            return web.json_response({"status": "error", "error": "API failed"}, status=502)
+
+        key = f"{region}:{clan_id}"
+        current_glory = int(api_data.get("glory_points") or api_data.get("score") or 0)
+        baselines = _load_baselines()
+        baselines[key] = {
+            "region": region,
+            "clan_id": clan_id,
+            "baseline_glory": current_glory,
+            "baseline_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _save_baselines(baselines)
+        bot_state.log(f"🔄 Guild baseline reset: {key} = {current_glory:,}", "warning")
+        return web.json_response({"status": "success", "baseline_glory": current_glory})
+    except Exception as e:
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
+
+
+async def handle_list_guilds(request: web.Request) -> web.Response:
+    """GET /api/guild/list — all tracked guilds."""
+    baselines = _load_baselines()
+    items = []
+    for key, v in baselines.items():
+        items.append({
+            "key": key,
+            "region": v.get("region"),
+            "clan_id": v.get("clan_id"),
+            "baseline_glory": v.get("baseline_glory"),
+            "baseline_at": v.get("baseline_at"),
+            "current": GUILD_STATE.get(key, {}),
+        })
+    return web.json_response({"status": "success", "guilds": items})
+
+
 # ==================== WEB SERVER STARTUP ====================
 
 async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
     app = web.Application()
 
-    # ---------- CORS + request logging middleware ----------
     @web.middleware
     async def cors_and_log_middleware(request, handler):
         try:
@@ -739,7 +865,6 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
         except Exception:
             pass
 
-        # Handle CORS preflight
         if request.method == "OPTIONS":
             return web.Response(
                 status=204,
@@ -764,7 +889,7 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
 
     app.middlewares.append(cors_and_log_middleware)
 
-    # ---------- Routes (with and without trailing slash) ----------
+    # ---------- Routes ----------
     app.router.add_get("/", handle_index)
 
     app.router.add_get("/api/stats", handle_get_stats)
@@ -791,13 +916,19 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 5000):
     app.router.add_post("/api/logs/clear", handle_clear_logs)
     app.router.add_post("/api/logs/clear/", handle_clear_logs)
 
+    # ---------- Guild routes ----------
+    app.router.add_get("/api/guild/info", handle_guild_info)
+    app.router.add_get("/api/guild/info/", handle_guild_info)
+
+    app.router.add_post("/api/guild/reset", handle_guild_reset_baseline)
+    app.router.add_post("/api/guild/reset/", handle_guild_reset_baseline)
+
+    app.router.add_get("/api/guild/list", handle_list_guilds)
+    app.router.add_get("/api/guild/list/", handle_list_guilds)
+
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, host, port)
     await site.start()
-    print(f"[WEB] PRN CODEX Dashboard running on http://{host}:{port}")
+    print(f"[WEB] Server running on http://{host}:{port}")
     return runner
-
-# ╔══════════════════════════════════════════════════════════════════════╗
-# ║   End of file  —  PRN CODEX  —  Premium Edition                      ║
-# ╚══════════════════════════════════════════════════════════════════════╝
